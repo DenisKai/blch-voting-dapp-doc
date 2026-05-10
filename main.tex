@@ -1,0 +1,52 @@
+% Erzeugen: latexmk -pdf main.tex   (empfohlen)
+% Alternativ: pdflatex main.tex && pdflatex main.tex
+
+\documentclass[11pt,a4paper]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[ngerman]{babel}
+\usepackage{microtype}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\usepackage[hidelinks]{hyperref}
+
+% Doppelte PDF-Anker auf Titelseite und Abstract vermeiden (report-Klasse).
+\hypersetup{pageanchor=false}
+
+\title{Blockchain-basierte Abstimmungsanwendung\\\large Technische Dokumentation}
+\author{Ihr Name\\\small Institution oder Lehrveranstaltung}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Kurze Zusammenfassung von Umfang, Annahmen und Bezug dieses Dokuments zum
+Projekt \texttt{blch-voting-dapp}. Diesen Platzhaltertext ersetzen.
+\end{abstract}
+\hypersetup{pageanchor=true}
+
+\tableofcontents
+
+\clearpage
+
+\input{content/intro}
+\input{content/system-overview}
+\input{content/smart-contract}
+\input{content/frontend-backend}
+\input{content/security-privacy}
+
+\clearpage
+
+% Optionale Literaturliste (benötigt .bib und z.\,B. biblatex/biber).
+% Bei Bedarf aktivieren:
+% \bibliography{references}
+
+\end{document}

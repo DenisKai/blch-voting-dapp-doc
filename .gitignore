@@ -1,0 +1,26 @@
+# Compiled output
+*.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.bcf
+*.blg
+*.fls
+*.fdb_latexmk
+*.run.xml
+*.synctex.gz
+*.glg
+*.glo
+*.gls
+*.acn
+*.acr
+*.alg
+*.xdy
+
+# Editor-spezifisch
+.vscode/
+*.sublime-project
