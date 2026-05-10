@@ -1,41 +1,88 @@
 \chapter{Systemarchitektur und Technologie}
+\label{chap:arch}
 
-\section{DApp-Kernkonzepte (Theorie)}
-Die Bewertung verlangt die korrekte Nutzung typischer DApp-Bausteine:
-Ethereum-Blockchain, Solidity-Smart-Contracts, Browser-Frontend und
-Wallet-Anbindung (im Merkblatt beispielhaft Web3.js und MetaMask genannt).
-Dieses Projekt erfüllt dasselbe Muster mit \textbf{ethers.js v6} statt Web3.js:
-das Frontend baut \texttt{Contract}-Instanzen mit MetaMask-injiziertem
-\texttt{window.ethereum} und signiert Transaktionen lokal.
+\section{DApp-Kernkonzepte und ihre Umsetzung im Projekt}
 
-\section{Schichtenmodell}
-\begin{verbatim}
-  Nuxt 3 (Vue)  -->  ethers.js  -->  MetaMask  -->  RPC (Hardhat / Sepolia)
-                                              -->  Smart Contracts
-\end{verbatim}
-\begin{itemize}
-  \item \textbf{Präsentationsschicht:} \path{frontend/} (Nuxt, Komponenten in
-    \path{app/app.vue}, Logik in Composables \path{useWallet.ts},
-    \path{useContracts.ts}).
-  \item \textbf{On-Chain-Logik:} \path{contracts/VoteToken.sol},
-    \path{contracts/PredictionMarket.sol}, kompiliert und getestet mit Hardhat.
-  \item \textbf{Deployment:} \path{scripts/deploy.ts} schreibt Adressen nach
-    \path{deployments/<netzwerk>.json}; \path{scripts/export-frontend.ts}
-    versorgt das Frontend mit ABI und \path{addresses.json}.
-\end{itemize}
+Die Lehrveranstaltung verlangt typischerweise die sichere Anwendung
+grundlegender DApp-Bausteine: eine öffentliche Blockchain als Vertrauensanker,
+in Solidity geschriebene Smart Contracts, ein Browser-Frontend und eine Wallet,
+die Transaktionen signiert. Im Merkblatt werden beispielhaft Web3.js und MetaMask
+genannt; funktional äquivalent setzt dieses Projekt auf \textbf{ethers.js in der
+Version 6} und ebenfalls MetaMask als injizierten Ethereum-Provider
+(\texttt{window.ethereum}).
 
-\section{Kein zentrales Backend für Geschäftslogik}
-Marktstatus, Stakes und Auszahlungen liegen ausschließlich in den Contracts.
-Es gibt keinen Server, der Stimmzähler führt oder Gewinner ``bestimmt''---die
-Admin-Funktion \texttt{resolveMarket} ist bewusst \textbf{on-chain in einer
-Adresse} gebündelt (Oracle-Limitierung, siehe
-Kapitel~\ref{chap:sicherheit}).
+Das Frontend erzeugt für jeden benötigten Vertrag eine \texttt{Contract}-Instanz
+mit ABI und Deployment-Adresse. Lesezugriffe nutzen den Provider; schreibende
+Aufrufe laufen über einen \texttt{Signer}, der von der verbundenen Wallet
+kommt. Damit ist die kryptographische Autorisierung klar von der bloßen
+Datenabfrage getrennt: Nur wenn Nutzerinnen eine Transaktion bestätigen, ändert
+sich der On-Chain-Zustand.
 
-\section{Netzwerke und Konfiguration}
-\begin{itemize}
-  \item \textbf{Lokale Entwicklung:} Hardhat-Node, typischer Chain-ID
-    \texttt{31337}, RPC \texttt{http://127.0.0.1:8545} (siehe README).
-  \item \textbf{Testnet:} Sepolia-Deployment über Umgebungsvariablen
-    (\texttt{SEPOLIA\_RPC\_URL}, \texttt{SEPOLIA\_PRIVATE\_KEY})---Schlüssel
-    niemals committen oder ins Docker-Image legen.
-\end{itemize}
+\section{Schichtenmodell und Datenflüsse}
+
+\begin{sloppypar}
+Die Architektur lässt sich als dreischichtiges Modell beschreiben, das von der
+Präsentation bis zur persistenten Chain reicht. In komprimierter Lesart ergibt
+sich folgender Datenfluss: Die Nuxt-Oberfläche ruft über \texttt{ethers.js}~v6
+die MetaMask-Provider-Schnittstelle auf; MetaMask signiert Transaktionen und
+sendet sie an einen JSON-RPC-Endpunkt (lokal Hardhat, öffentlich z.\,B.\
+Sepolia). Lesende Aufrufe treffen dieselben Verträge \texttt{VoteToken} und
+\texttt{PredictionMarket} ohne Wallet-Bestätigung, sofern die Anwendung einen
+reinen Provider-Pfad nutzt---im vorliegenden Frontend dominiert jedoch der
+Signer-Pfad für Einheitlichkeit.
+\end{sloppypar}
+
+\paragraph{Präsentationsschicht.}
+Das Verzeichnis \path{frontend/} enthält die Nuxt-Anwendung. Die zentrale
+Oberfläche liegt in \path{frontend/app/app.vue}; wiederkehrende Logik ist in
+Composables ausgelagert, insbesondere \path{useWallet.ts} für Verbindung, Kette
+und Signer sowie \path{useContracts.ts} für Vertragsinstanzen, Aggregationslese-
+routinen und Transaktionshüllen.
+
+\paragraph{On-Chain-Logik.}
+Die Verträge \path{contracts/VoteToken.sol} und
+\path{contracts/PredictionMarket.sol} bilden die fachliche Wahrheit. Sie werden
+mit Hardhat kompiliert, getestet und über \path{scripts/deploy.ts} ausgerollt.
+Die Trennung zwischen Token und Markt folgt dem Prinzip der getrennten
+Zuständigkeiten: Der Token kapselt Ausgabe und Übertragung nach ERC-20; der
+Marktvertrag kapselt Geschäftsregeln und hält aggregierte Pools.
+
+\paragraph{Build- und Integrationspfad.}
+Nach dem Deployment schreibt \path{scripts/deploy.ts} die Adressen nach
+\path{deployments/<netzwerk>.json}. Das Skript \path{scripts/export-frontend.ts}
+überträgt ABIs und Adressen in \path{frontend/app/contracts/}, sodass die
+Oberfläche ohne manuelles Kopieren mit der jeweiligen Deployment-Generation
+übereinstimmt. Dieser Schritt ist leicht zu vergessen, aber für reproduzierbare
+Demos unverzichtbar.
+
+\section{Abwesenheit eines zentralen Anwendungsservers für die Geschäftslogik}
+
+Marktlisten, Poolstände und Auszahlungsberechtigungen werden nicht in einer
+Datenbank verwaltet, sondern aus der Chain gelesen. Ein klassischer Backend-Dienst
+könnte höchstens als Cache, Indexer oder für Metadaten dienen; im vorliegenden
+Repository ist bewusst darauf verzichtet, um die DApp-Eigenschaft nicht zu
+relativieren. Die Ausnahme bildet die semantische Rolle der Admin-Adresse: Sie ist
+kein Server, aber ein zentrales Vertrauenselement auf Protokollebene, weil sie
+die Auflösungsentscheidung trifft (vgl. Kapitel~\ref{chap:sicherheit}).
+
+\section{Netzwerke, Konfiguration und Betriebsmodi}
+
+\paragraph{Lokale Entwicklung.}
+Für den Alltag im Kurs eignet sich ein Hardhat-Node mit Chain-ID \texttt{31337}
+und RPC-Endpunkt \texttt{http://127.0.0.1:8545}. MetaMask muss dieses Netzwerk
+als benutzerdefinierte Chain eingetragen haben, damit Transaktionen nicht an das
+falsche Netzwerk gesendet werden.
+
+\paragraph{Öffentliches Testnet.}
+Das Projekt unterstützt Sepolia-Deployments über Umgebungsvariablen wie
+\texttt{SEPOLIA\_RPC\_URL} und \texttt{SEPOLIA\_PRIVATE\_KEY}. Private Schlüssel
+dürfen niemals im Versionskontrolsystem, in CI-Logs oder in Container-Layern
+landen; stattdessen sind Geheimnisse über die jeweilige Laufzeitumgebung zu
+injizieren.
+
+\paragraph{Konsistenz zwischen Frontend und Chain.}
+Die Adressen in \path{frontend/app/contracts/addresses.json} müssen exakt zu der
+Chain passen, gegen die MetaMask verbunden ist. Ein häufiger Fehler im Praktikum
+ist die Kombination aus lokalem Node, aber noch ausstehendem
+\texttt{export:frontend} nach einem frischen Deploy, oder ein Sepolia-Frontend mit
+Hardhat-Adressen.

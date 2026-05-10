@@ -1,63 +1,119 @@
 \chapter{Smart Contracts}
 \label{chap:contracts}
 
-\section{Überblick}
-Zwei Verträge bilden die Anwendungslogik:
-\begin{description}
-  \item[\texttt{VoteToken}] ERC-20 (OpenZeppelin) mit einmaligem Faucet.
-  \item[\texttt{PredictionMarket}] Markterstellung, Staking, Auflösung,
-    Gewinnauszahlung; hält ERC-20 mittels \texttt{transferFrom}/\texttt{transfer}.
-\end{description}
+\section{Überblick und Verantwortlichkeiten}
+
+Die On-Chain-Anwendungslogik ist auf zwei Verträge verteilt, die gemeinsam den
+Lebenszyklus von Token und Markt abbilden. \texttt{VoteToken} implementiert den
+ERC-20-Standard mit OpenZeppelin-Basisklasse und ergänzt ein einmaliges
+Faucet-Minting. \texttt{PredictionMarket} verwaltet Märkte, Pools, Stakes,
+Fristlogik, administrative Auflösung und Auszahlungen; er hält dazu
+\emph{VOTE}-Token mittels \texttt{transferFrom} im Vertragsadressensaldo und
+gibt Belohnungen per \texttt{transfer} zurück an Gewinner.
+
+Diese Trennung ist für die Lesbarkeit und für Tests vorteilhaft: Token-Regeln
+und Marktregeln können unabhängig voneinander überprüft werden, und der
+Marktvertrag referenziert das Token lediglich über die \texttt{IERC20}-Schnittstelle
+sowie die im Konstruktor gebundene Adresse.
 
 \section{\texttt{VoteToken.sol}}
-\begin{itemize}
-  \item Konstante \texttt{FAUCET\_AMOUNT = 1000 ether} (18 Dezimalstellen wie ETH).
-  \item Mapping \texttt{hasClaimed} verhindert mehrfaches \texttt{claimFaucet()}.
-  \item Event \texttt{FaucetClaimed}.
-\end{itemize}
+
+Der Vertrag erbt von \texttt{ERC20} und setzt Name sowie Symbol fest. Die
+Konstante \texttt{FAUCET\_AMOUNT} ist mit \texttt{1000 ether} notiert, wobei
+\texttt{ether} hier die Solidity-Syntax für $10^{18}$ Einheiten nutzt und damit
+dem üblichen 18-Dezimal-Schema entspricht, nicht einem echten Ether-Betrag.
+
+Die externe Funktion \texttt{claimFaucet} prüft \texttt{hasClaimed[msg.sender]},
+setzt das Flag und mintet anschließend den festen Betrag an die aufrufende
+Adresse. Das Ereignis \texttt{FaucetClaimed} protokolliert Vorgang und Betrag für
+Beobachter und Indexer. Es gibt keine zusätzliche Rollenlogik: Jede Adresse ist
+gleichberechtigt, solange sie noch nicht beansprucht hat.
 
 \section{\texttt{PredictionMarket.sol}}
 
-\subsection{Marktstruktur}
-Das struct \texttt{Market} enthält unter anderem Ersteller, Frage,
-\texttt{resolutionContext}, \texttt{deadline}, \texttt{resolved},
-\texttt{winningOutcomeId} und \texttt{totalPool}.
+\subsection{Zustandsmodell eines Marktes}
 
-\subsection{Zentrale Mappings}
-\begin{itemize}
-  \item \texttt{marketOutcomes}: Outcome-Namen je Markt-ID.
-  \item \texttt{outcomePools}: eingezahlte \emph{VOTE} pro Ausgang.
-  \item \texttt{userStakes}: Stake je Nutzer und Ausgang.
-  \item \texttt{claimed}: verhindert Doppel-Auszahlung nach Auflösung.
-\end{itemize}
+Ein Markt wird im Speicher als \texttt{struct Market} geführt. Neben Metadaten wie
+\texttt{creator}, \texttt{question} und \texttt{resolutionContext} enthält der
+Datensatz die absolute \texttt{deadline}, boolesche Auflösungsinformation
+\texttt{resolved}, den Index \texttt{winningOutcomeId} sowie den aggregierten
+\texttt{totalPool}. Die eigentlichen Ausgangsbezeichnungen liegen in einem
+separaten Array pro Markt-ID (\texttt{marketOutcomes}), sodass die Anzahl der
+Ausgänge pro Markt variieren kann.
 
-\subsection{Wichtige externe Funktionen}
-\begin{description}
-  \item[\texttt{createMarket}] Prüft nicht-leere Frage und Kontext, mindestens
-    zwei Outcomes und positive Laufzeit; setzt Deadline absolut
-    \texttt{block.timestamp + duration}.
-  \item[\texttt{stake}] Verbietet Staking nach Deadline oder nach Auflösung;
-    zieht Token per \texttt{transferFrom}; aktualisiert Nutzer-Stake und Pool.
-  \item[\texttt{resolveMarket}] \texttt{onlyAdmin}; nur nach Deadline, setzt
-    Gewinner-Outcome-Index und markiert aufgelöst.
-  \item[\texttt{claimReward}] Nur für Gewinner ohne vorherige Auszahlung;
-    Betrag proportional zu Einsatz am gewinnenden Pool (siehe unten).
-\end{description}
+Die Liquidität der Teilnehmenden verteilt sich auf \texttt{outcomePools}, während
+\texttt{userStakes} die individuellen Anteile pro Adresse und Ausgang festhält.
+Nach Auflösung verhindert \texttt{claimed} eine doppelte Auszahlung derselben
+Adresse für denselben Markt.
 
-\subsection{Wahrscheinlichkeiten}
-Die Funktion \texttt{getOutcomeProbability} liefert Anteile in
-\textbf{Basis-Punkten}: $\text{BPS} = \lfloor \text{outcomePool}/\text{totalPool}\cdot 10000\rfloor$.
-Bei \texttt{totalPool == 0} wird 0 zurückgegeben.
+\subsection{Lebenszyklus im Überblick}
 
-\subsection{Belohnungsformel}
-Für einen Nutzer mit Stake $s$ auf dem Gewinner-Pool vom Volumen $W$ und
-Markt-Gesamtpool $T$ gilt:
+Die Funktion \texttt{createMarket} nimmt Frage, Ausgangsliste, Dauer in Sekunden
+und Auflösungskontext entgegen. Sie verlangt nicht-leere Strings für Frage und
+Kontext, mindestens zwei nicht-leere Ausgänge und eine positive Dauer. Die
+Deadline wird aus dem aktuellen Blockzeitstempel plus Dauer gebildet; damit ist
+die Frist an die Chain-Zeit gekoppelt, nicht an eine externe Uhr.
+
+Die Funktion \texttt{stake} erlaubt Einzahlungen nur solange der Markt weder
+aufgelöst ist noch die Deadline überschritten ist. Sie validiert den
+Ausgangsindex, verlangt positive Beträge und zieht Token mit
+\texttt{transferFrom} vom Nutzer in den Marktvertrag. Anschließend werden
+Nutzer-Stake, Ausgangs-Pool und Gesamtpool inkrementiert; ein \texttt{Staked}-Event
+dokumentiert die Operation.
+
+Die Funktion \texttt{resolveMarket} ist mit \texttt{onlyAdmin} geschützt. Sie
+darf erst nach der Deadline ausgeführt werden, verlangt einen gültigen
+Gewinner-Index und markiert den Markt als aufgelöst. Es findet in dieser
+Implementierung keine automatische Tokenbewegung statt; die Mittel bleiben im
+Vertrag, bis Gewinner aktiv beanspruchen.
+
+Die Funktion \texttt{claimReward} prüft Auflösung, verhindert Doppelclaims,
+verlangt einen positiven Gewinner-Stake und berechnet die Belohnung wie unten
+angegeben. Vor dem Transfer wird \texttt{claimed} gesetzt, um
+Wiedereintrittsangriffe zu unterbinden; anschließend erfolgt \texttt{transfer}.
+
+\subsection{Wahrscheinlichkeitsanzeige in Basis-Punkten}
+
+Die Sichtfunktion \texttt{getOutcomeProbability} implementiert eine
+ganzzahlige Approximation des Poolanteils. Für einen nicht-leeren Gesamtpool gilt
+\[
+  \text{BPS} = \left\lfloor \frac{\text{outcomePool}}{\text{totalPool}} \cdot 10000 \right\rfloor .
+\]
+Ist der Gesamtpool null, wird 0 zurückgegeben, um Division-by-Zero zu vermeiden.
+Basis-Punkte sind ein gebräuchliches Format in DeFi-Protokollen, weil sie
+Prozentangaben ohne Fließkommadarstellung erlauben.
+
+\subsection{Belohnungsformel und Rundungseffekte}
+
+Für einen Nutzer mit Stake $s$ auf dem gewinnenden Ausgang, dessen Poolvolumen
+$W$ beträgt, und einem Gesamtpool $T$ des Marktes setzt der Vertrag
 \begin{equation*}
   \text{Reward} = \left\lfloor \frac{s \cdot T}{W} \right\rfloor .
 \end{equation*}
-Gewinner teilen sich den \textbf{gesamten} Markt-Pool anteilig; Verlierer-Stakes
-fliesen über den Pool in die Auszahlung (ohne zusätzliche Gebühr im Demo-Vertrag).
+Intuitiv teilen sich alle Gewinner-Staker den gesamten Markt-Pool proportional zu
+ihren Anteilen am Gewinner-Pool; Verlierer-Stakes bleiben im Vertrag und fließen
+in die Auszahlungsbasis ein, weil $T$ alle Ausgänge umfasst.
 
-\subsection{Events}
-\texttt{MarketCreated}, \texttt{Staked}, \texttt{MarketResolved},
-\texttt{RewardClaimed} dienen Nachverfolgbarkeit und späterer Indexierung.
+Weil Solidity die Division auf Ganzzahlen ausführt, können kleinste Einheiten
+(\emph{dust}) im Vertrag verbleiben, insbesondere wenn $s \cdot T$ nicht durch
+$W$ teilbar ist. In einer produktiven Variante könnte man Restbeträge explizit
+allokieren oder eine Sweep-Funktion definieren; für die Lehr-Demo ist dieses
+Detail jedoch ein legitimes Gesprächsthema über Präzisionsverluste in
+Smart Contracts.
+
+\subsection{Schnittstellen zum Auslesen von Daten}
+
+Neben den bereits genannten Funktionen stellt der Vertrag Abfragen bereit, die
+das Frontend benötigt, ohne interne Arrays direkt exponieren zu müssen:
+\texttt{getMarketCount}, \texttt{getMarket}, \texttt{getOutcomeCount},
+\texttt{getOutcome} (kombiniert Name, Pool und Wahrscheinlichkeit) sowie
+\texttt{getUserStake}. Diese Methoden kapseln \texttt{require}-Prüfungen und
+geben konsistente Fehlermeldungen zurück, wenn IDs ungültig sind.
+
+\subsection{Ereignisse}
+
+\texttt{MarketCreated}, \texttt{Staked}, \texttt{MarketResolved} und
+\texttt{RewardClaimed} unterstützen Nachvollziehbarkeit und könnten in einer
+erweiterten Architektur von einem Indexer wie The Graph konsumiert werden. Für
+das vorliegende Projekt genügen sie, um in Block-Explorern den Ablauf zu
+rekonstruieren und in Tests auf Emissionen zu assertieren.

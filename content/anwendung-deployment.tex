@@ -1,45 +1,91 @@
 \chapter{Frontend, Nutzerrollen und Deployment}
+\label{chap:frontend}
 
-\section{Frontend (Nuxt)}
-Die Haupt-UI liegt in \path{frontend/app/app.vue}:
-\begin{itemize}
-  \item Wallet: Verbinden, Anzeige von Adresse, Chain-ID,
-    \emph{VOTE}-Saldo und \emph{Allowance} gegenüber \texttt{PredictionMarket}.
-  \item Nicht-Admin: Faucet-Button (\texttt{claimFaucet}), Formular zur
-    Markterstellung mit Dauer und Resolution Context---Outcomes sind fest YES/NO.
-  \item Marktkarten: Status-Badge, Pools, angezeigte Prozentwerte, Staken mit
-    vorherigem Approve für den jeweiligen Betrag.
-  \item Admin-Adresse (aus exportierter Konfiguration): Auflösungsbuttons pro
-    Markt nach Fristablauf (\texttt{resolveMarket}).
-\end{itemize}
-Die Composable-Datei \path{useContracts.ts} kapselt alle Lesevorgänge
-(\texttt{getMarkets}-Schleife über Märkte und Outcomes) und Transaktionsaufrufe.
+\section{Rollenmodell aus Sicht der Anwendung}
 
-\section{Ablauf für Endnutzerinnen}
-\begin{enumerate}
-  \item Wallet verbinden, Netzwerk lokal oder Sepolia wählen (MetaMask-Einträge
-    wie in der README beschrieben).
-  \item \emph{VOTE} einmalig fauceten und ggf.\ Saldo aktualisieren.
-  \item Markt eröffnen oder bestehenden wählen, \emph{Approve} für gewünschten
-    Stake-Betrag, danach YES oder NO staken (solange Zeitfenster und nicht
-    aufgelöst).
-  \item Nach Auflösung und eigenem Gewinn \texttt{claimReward} auslösen.
-\end{enumerate}
+Aus Nutzersicht lassen sich drei idealisierte Rollen unterscheiden, auch wenn
+sie auf Protokollebene nicht als separate Smart-Contract-Rollen codiert sind:
+die \textbf{teilnehmende Adresse}, die Märkte erstellt und staked; die
+\textbf{Admin-Adresse}, die identisch mit dem Deployer aus \path{scripts/deploy.ts}
+gesetzt wird und Märkte auflöst; sowie \textbf{Beobachterinnen}, die lediglich
+Zustände lesen würden---im vorliegenden Frontend ist Lesen jedoch ebenfalls an
+eine verbundene Wallet gekoppelt, weil die Composables einen Signer verwenden.
+Für reine Lese-Szenarien könnte man das Frontend künftig um Provider-only-Pfade
+erweitern; der aktuelle Stand priorisiert die Demonstration transaktionsgetriebener
+Abläufe.
+
+\section{Funktionsumfang der Nuxt-Oberfläche}
+
+Die Hauptansicht in \path{frontend/app/app.vue} strukturiert die Interaktion in
+logische Blöcke. Im Wallet-Bereich werden Verbindungsstatus, Kontoadresse,
+Chain-ID, \emph{VOTE}-Saldo und die aktuelle \texttt{allowance} des
+\texttt{PredictionMarket} angezeigt. Nur wenn das erwartete Netzwerk aktiv ist,
+erscheinen die übrigen Aktionen sinnvoll; Mismatch-Warnungen sind in der Praxis
+ein häufiger Fehler, den diese Arbeit im Architekturkapitel bereits thematisiert.
+
+Nicht-Admin-Nutzerinnen sehen einen Faucet-Button, der \texttt{claimFaucet}
+auslöst, sowie ein Formular zur Markterstellung. Letzteres übergibt an die
+Composable-Schicht eine Frage, eine feste Liste \texttt{["YES", "NO"]}, eine
+Dauer in Sekunden und den \emph{resolution context}. Die Festlegung auf zwei
+Ausgänge ist eine rein frontendseitige Vereinfachung; der Vertrag würde auch
+längere Ausgangslisten akzeptieren, sofern die Eingaben den Anforderungen genügen.
+
+Die Marktkarten visualisieren den Lebenszyklus: ausstehende Märkte erlauben
+Staking, sofern die Deadline in der Zukunft liegt und keine Auflösung erfolgt ist.
+Vor dem Staken muss der Nutzer den Marktvertrag mit \texttt{approve} für den
+gewünschten Betrag autorisieren; die UI spiegelt diesen Zwei-Schritt-Prozess
+explizit wider, weil er für ERC-20-Interaktionen charakteristisch ist. Nach
+Auflösung erscheinen für die Admin-Adresse Auflösungsaktionen, während Gewinner
+einen Claim auslösen können.
+
+\section{Composable-Schicht als API des Frontends}
+
+Die Datei \path{useContracts.ts} kapselt die ethers.js-\texttt{Contract}-Instanzen
+für \texttt{VoteToken} und \texttt{PredictionMarket} und liest die Deployment-
+Adressen aus \path{frontend/app/contracts/addresses.json}. Aggregationsfunktionen
+holen die Marktanzahl, iterieren über Indizes und rufen \texttt{getOutcome}
+pro Ausgang auf, um eine strukturierte \texttt{MarketSummary} für die UI zu
+bauen. Diese Schicht ist die natürliche Erweiterungsstelle für Pagination,
+Caching oder Fehlerbehandlung, falls die Marktanzahl in späteren Arbeiten wächst.
+
+\section{Typischer Bedienablauf für Lernende}
+
+Der empfohlene Ablauf im Praktikum lautet wie folgt. Zuerst wird MetaMask mit der
+lokalen Hardhat-Chain oder mit Sepolia konfiguriert und die Website geöffnet.
+Nach dem Verbinden der Wallet beansprucht jede Teilnehmerin einmalig den Faucet
+und kontrolliert den Saldo. Anschließend wird entweder ein neuer Markt erstellt
+oder ein bestehender gewählt. Vor dem Staken ist die Allowance zu setzen; danach
+wählt man den Betrag und den Ausgang. Nach Fristablauf führt die
+Deployer-Wallet die Auflösung durch; Gewinner initiieren \texttt{claimReward}.
+Zwischen diesen Schritten sollte beobachtet werden, wie sich Poolverhältnisse und
+Basis-Punkte-Anzeige ändern, um das Zusammenspiel von On-Chain-State und UI zu
+verstehen.
 
 \section{Build- und Betriebsszenarien}
-\subsection{Lokal (Entwicklung)}
-Typische Reihenfolge aus der README:
-\texttt{npm run chain} (Terminal~1); \texttt{npm run deploy:local} sowie
-\texttt{npm run export:frontend} (Terminal~2); \texttt{cd frontend \&\& npm run dev}
-(Terminal~3).
 
-\subsection{Docker \& CI}
-Ein Docker-Image bündelt das gebaute Frontend und die exportierten Contract-JSONs,
-nicht jedoch Private Keys oder Deployment-Skripte. GitHub Actions
-(\path{.github/workflows/}) können das Image erzeugen und z.\,B.\ nach GHCR pushen---
-Details im Repo \path{Dockerfile} und \path{docker-entrypoint.sh}.
+\subsection{Lokale Entwicklung}
 
-\section{Schnittstelle zur Chain}
-Deployed Adressen und ABIs liegen unter \path{frontend/app/contracts/} (u.\,a.\
-\texttt{addresses.json}, Artefakte). Frontend und Dokumentation müssen zur
-gleichen Deployment-Generation passen (\texttt{export:frontend} nach jedem Deploy).
+Die README des Code-Repositories empfiehlt drei Terminals: einen laufenden
+Hardhat-Node (\texttt{npm run chain}), ein Deployment inklusive Export
+(\texttt{npm run deploy:local} gefolgt von \texttt{npm run export:frontend}) und
+schließlich den Nuxt-Dev-Server im Verzeichnis \path{frontend/}. Der Node muss
+während der Nutzung aktiv bleiben, da sonst RPC-Anfragen fehlschlagen.
+
+\subsection{Docker und kontinuierliche Integration}
+
+Das Docker-Image enthält das gebaute Frontend und die exportierten
+Contract-Artefakte, jedoch keine privaten Schlüssel und keine Deploy-Skripte in
+ausführungsrelevanter Form. GitHub Actions Workflows (siehe \path{.github/workflows/}
+im Anwendungsrepository) können das Image bauen und beispielsweise zu GHCR
+pushen. Für eine wissenschaftliche Arbeit sollte dokumentiert werden, welche
+Pipeline-Schritte wo laufen und wie Geheimnisse injiziert werden, ohne sie in
+Logs oder Schichten abzulegen.
+
+\section{Schnittstelle zwischen Build-Artefakten und Chain}
+
+Die Dateien unter \path{frontend/app/contracts/}---Adressen, ABIs und ggf.\
+netzwerkspezifische Varianten---müssen zur tatsächlich adressierten Chain passen.
+Nach jedem frischen Deployment ist \texttt{npm run export:frontend} zu wiederholen.
+Diese scheinbar triviale Disziplin verhindert den häufigen Fehler, dass
+Transaktionen an alte Vertragsadressen gesendet werden, während die UI noch neue
+Fragen erwartet.

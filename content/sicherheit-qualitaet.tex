@@ -1,66 +1,112 @@
 \chapter{Sicherheit, Qualität und Bewertungseinordnung}
 \label{chap:sicherheit}
 
-\section{Schutzmechanismen im Vertrag}
-\begin{itemize}
-  \item Staking nur bei offenem Markt und vor Deadline; positive Beträge;
-    gültige Outcome-IDs.
-  \item Einmalige Auflösung; nur Admin; nur nach Fristende.
-  \item Einmalige Auszahlung pro Adresse und Markt (\texttt{claimed}).
-  \item \textbf{Pull-Payments:} Gewinner rufen \texttt{claimReward} selbst auf---
-    vermeidet teure Schleifen über alle Teilnehmer beim Oracle-Schritt und
-    entspricht einem etablierten Solidity-Muster (Bonusrelevanz Theorie/Praxis).
-\end{itemize}
+\section{Schutzmechanismen im Vertragsdesign}
 
-\section{Zentrale Schwachstellen des Demo-Designs}
-\begin{itemize}
-  \item \textbf{Vertrauen in Admin/Oracle:} Korrektheit der Auflösung hängt von
-    der ehrlichen und fachlich richtigen Wahl von \texttt{winningOutcomeId} ab---
-    keine Chainlink-/Dispute-Schicht.
-  \item \textbf{Kein Spam-Schutz / keine Anleihe für Markterstellung.}
-  \item \textbf{Kein HandelPositionswechsel nach Staken} (nicht Kernziel der Demo).
-  \item \textbf{Festlegung Frontend auf YES/NO} reduziert Flexibilität trotz
-    generischer Contract-API.
-\end{itemize}
+Die Implementierung folgt einer Reihe von Mustern, die typische Angriffsflächen
+in einfachen Staking-Verträgen reduzieren, ohne den Anspruch eines vollständigen
+Security-Audits zu erheben.
 
-\section{Tests und Codequalität}
-Hardhat/Chai-Tests unter \path{test/PredictionMarket.ts} prüfen u.\,a.\
-Markterstellung, Validierung, ERC-20-Approve-Pfad, Zeitlogik beim Staken und
-bei der Auflösung, sowie Belohnungen und Verbote für Verlierende.
-Die Codebasis trennt Verantwortlichkeiten zwischen Token-Vertrag und
-Markt-Vertrag und nutzt etablierte OpenZeppelin-Bausteine für ERC-20---was
-Nachvollziehbarkeit und Wartbarkeit erhöht (Anforderung Praxis/Kategorie).
+\paragraph{Zeit- und Zustandsguarden.}
+Staking ist nur zulässig, solange der Markt nicht aufgelöst ist und der
+Blockzeitstempel strikt vor der Deadline liegt. Damit wird verhindert, dass nach
+öffentlich bekannter Auflösung noch Mittel in einen Ausgang umgeschichtet werden.
+Positive Beträge und gültige Ausgangs-IDs werden zusätzlich erzwungen.
 
-\section{Einordnung nach Bewertungskriterien (Abgabe)}
-Die folgende Tabelle bezieht sich explizit auf das Merkblatt
-\textit{Gruppenarbeit Bewertung}.
+\paragraph{Einmalige Auflösung und Admin-Bindung.}
+\texttt{resolveMarket} kann pro Markt nur erfolgreich ausgeführt werden, solange
+\texttt{resolved} noch falsch ist, und nur durch die im Konstruktor festgelegte
+\texttt{admin}-Adresse. Die Deadline muss erreicht sein. So entsteht ein klarer
+Übergang von der offenen Phase zur Abrechnungsphase.
+
+\paragraph{Pull-Payments statt Push über alle Nutzer.}
+Gewinner müssen \texttt{claimReward} selbst aufrufen. Das vermeidet das
+bekannte ``Push''-Antipattern, bei dem ein privilegierter Aufrufer in einer
+Schleife viele Übertragungen auslöst und an das Gas-Limit stößt oder durch
+bösartige Empfänger revertiert wird. Pull-Muster sind in etablierten Solidity-
+Leitfäden dokumentiert und werden hier didaktisch sichtbar gemacht.
+
+\paragraph{Reentrancy und ERC-20-Interaktion.}
+Der Vertrag aktualisiert \texttt{claimed} vor dem externen Token-Transfer in
+\texttt{claimReward}, was dem Checks-Effects-Interactions-Muster entspricht und
+klassische Reentrancy-Pfade erschwert. Zusätzlich setzt OpenZeppelins ERC-20 auf
+moderne Solidity-Versionen mit sichereren Übertragungsmustern; dennoch bleibt die
+allgemeine Regel gültig, externe Calls zuletzt auszuführen und den Zustand zuvor
+final zu setzen.
+
+\section{Zentrale Grenzen und bewusste Schwachstellen des Demo-Designs}
+
+\paragraph{Vertrauen in Admin und Oracle-Semantik.}
+Die korrekte Auflösung hängt vollständig von der ehrlichen und sachgerechten Wahl
+von \texttt{winningOutcomeId} ab. Ein kompromittierter oder fehlbediener Admin
+kann Gewinner willkürlich setzen. Produktive Systeme ersetzen oder ergänzen diese
+Stelle durch dezentrale Reporter, Mehrheitsabstimmungen, ökonomische Anreize oder
+anspruchsvollere Oracle-Protokolle (vgl. Kapitel~\ref{chap:theorie}).
+
+\paragraph{Kein wirtschaftlicher Spam-Schutz für Markterstellung.}
+Jede Adresse kann Märkte erzeugen, ohne Gebühr in \emph{VOTE} oder nativem Coin
+zu hinterlegen. Das erleichtert Demos, eröffnet aber Missbrauchspotenzial in
+öffentlichen Deployments durch Markt-Flutungen.
+
+\paragraph{Kein Handel oder Positionswechsel.}
+Nach dem Staken gibt es keine Möglichkeit, Positionen zu verkaufen, zu hedgen oder
+zwischen Ausgängen zu wechseln. Echte Märkte bieten hierfür Sekundärhandel oder
+AMMs; dieses Projekt verzichtet bewusst darauf.
+
+\paragraph{Frontend-Reduktion auf YES/NO.}
+Obwohl der Vertrag mehrere Ausgänge unterstützt, führt das Frontend neue Märkte
+nur binär. Das ist eine UX-Entscheidung, die bei wissenschaftlicher Auswertung
+explizit genannt werden muss, damit nicht der Eindruck entsteht, der Vertrag sei
+auf zwei Ausgänge beschränkt.
+
+\section{Tests, Nachvollziehbarkeit und Codequalität}
+
+Die Hardhat-Tests unter \path{test/PredictionMarket.ts} decken zentrale Pfade ab:
+Markterstellung inklusive Validierung, ERC-20-Genehmigungen, zeitabhängiges
+Staking, Auflösungsregeln und korrekte sowie verbotene Auszahlungen. Die
+Verwendung etablierter Bibliotheken für den Token-Standard erhöht die
+Konfidenz in grundlegende Operationen wie \texttt{transfer} und \texttt{approve}.
+
+Für eine Benotung im oberen Bereich empfiehlt es sich, neben diesem Dokument
+optional Ergänzungen wie Sequenzdiagramme, Gas-Kostenbeobachtungen oder eine
+kurze manuelle Threat-Modelling-Übung beizulegen; sie sind im aktuellen Umfang
+nicht zwingend, erhöhen aber die Überzeugungskraft der Abgabe.
+
+\section{Einordnung nach Bewertungskriterien}
+
+Die folgende Tabelle fasst zusammen, wie die vorliegende Arbeit typische
+Kriterienkataloge einer Gruppenarbeit abdeckt. Formulierungen beziehen sich auf
+das implementierte Repository und die hier dokumentierte Architektur.
 
 \begin{center}
 \begin{tabular}{@{}p{3.8cm}p{10.5cm}@{}}
   \toprule
   \textbf{Kategorie} & \textbf{Bezug zu dieser Arbeit} \\
   \midrule
-  Umfang (Features, Gewicht 2) &
-    Kernablauf (Faucet, Markt YES/NO, Staking, Pools/Prozent-Anzeige, Admin-Auflösung,
-    Claim) ist implementiert und in der UI bedienbar.
-    Bonus: Marktüberblick, Status, Notifications, Docker/Workflow. \\
+  Umfang (Features) &
+    Der Kernpfad---Faucet, Markt mit YES/NO im UI, Approve/Staking, Pool- und
+    Wahrscheinlichkeitsanzeige, Admin-Auflösung, Claim---ist vollständig in der
+    Oberfläche bedienbar. Ergänzend existieren Marktübersicht, Statuslogik,
+    Benachrichtigungen sowie Containerisierung und CI für das Frontend. \\
   \midrule
-  Theorie (3) &
-    Klassische DApp-Architektur ohne zentrale Geschäftslogik; Solidity + ERC-20 +
-    Wallet. Reflexion zentralen Orakels vs.\ dezentrales Ideal; Pull-Payments. \\
+  Theorie &
+    Es werden DApp-Schichten, ERC-20-Flüsse, Oracle-Abgrenzung, Pull-Payments und
+    die Einordnung zu Polymarket, Augur, Gnosis-Ansätzen und Oracle-Diensten
+    ausgeführt (Kapitel~\ref{chap:theorie}). \\
   \midrule
-  Praxis (2) &
-    Klar strukturierter TypeScript-/Vue-Code mit Composables, getrennte Contracts,
-    Tests, Deploy- und Export-Skripte (keine Keys im Image). \\
+  Praxis &
+    TypeScript/Vue-Struktur mit Composables, getrennte Contracts, automatisierbare
+    Deploy- und Export-Skripte, Tests und klare Trennung von Geheimnissen und
+    Build-Artefakten. \\
   \midrule
-  Report (1) &
-    Dieses Dokument: Systembeschreibung, Grenzen, Ablauf, Bewertungsbezug --- für
-    Note~5/6 Logik/Ausführlichkeit entsprechend ausbauen (Diagramme,
-    Zahlen/Gas-Analyse mögliche Erweiterungen). \\
+  Report &
+    Dieses Dokument liefert eine zusammenhängende Systembeschreibung mit
+    Explikation der Designentscheidungen und Grenzen. \\
   \midrule
-  Präsentation (1) &
-    Vorschlag Aufbau analog REPORT.md/Themenliste: Demo (Wallet, Market-Lifecycle),
-    Architekturskizze, Belohnungsformel, kritische Punkte Oracle. \\
+  Präsentation &
+    Als roter Faden eignet sich eine Live-Demo (Wallet, Netzwerkwahl,
+    Marktlebenszyklus) gefolgt von der Belohnungsformel und der Diskussion des
+    Admin-Orakels. \\
   \bottomrule
 \end{tabular}
 \end{center}

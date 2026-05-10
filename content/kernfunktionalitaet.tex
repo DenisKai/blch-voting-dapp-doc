@@ -1,50 +1,98 @@
 \chapter{Anwendungsfall und Kernfunktionalität}
+\label{chap:kern}
 
-\section{Use-Case in eigenen Worten}
-Eine Person möchte eine Frage zur Zukunft stellen (z.\,B.\ ob ein
-Kurs eine Schwelle überschreitet). Andere Teilnehmende platzieren mit
-\emph{VOTE}-Token Einsätze auf die von ihnen erwartete Antwort. Solange der
-Markt offen ist, zeigt die Oberfläche Poolgrößen und daraus abgeleitete
-Anteile in Prozent. Nach Ablauf der Frist wählt die Admin-Adresse den
-gewinnenden Ausgang; Gewinner holen ihre Auszahlung mit einer eigenen Transaktion
-ab (\emph{pull}).
+\section{Use-Case in narrativer Form}
 
-\section{Kernfunktionalität gemäß Bewertungsraster}
-Im Bewertungsdokument zur Gruppenarbeit wird \emph{Kernfunktionalität} als das
-Minimalset definiert, das den eigenen Use-Case durchspielbar macht---am Beispiel
-Token Voting z.\,B.\ Token-Verfügbarkeit, Abstimmung mit Optionen und
-Ergebnisdarstellung. Dieses Projekt folgt einem \textbf{Predictionsmarkt}-Use-Case;
-die folgende Liste ordnet die umgesetzte Kernlogik strukturell gleichartig ein:
+Stellen Sie sich eine Lerngruppe vor, die eine überschaubare, aber kontroverse
+Frage diskutiert, etwa ob ein bestimmter Kurs vor Semesterende eine definierbare
+Schwelle an Teilnehmenden erreicht. Eine Teilnehmerin möchte diese Frage in einen
+formalen Rahmen übersetzen, der Commitments sichtbar macht und nach einem
+klaren Zeitplan abrechnet. Sie erstellt daher on-chain einen Markt mit
+Fragestellung und einem \emph{resolution context}, der beschreibt, welche
+Informationsquellen oder welche Messregel bei der späteren Entscheidung gelten
+soll---auch wenn die eigentliche Durchsetzung in der Demo letztlich beim
+Admin liegt.
 
-\begin{enumerate}
-  \item \textbf{Tokenbereitstellung:} Adressen können \emph{VOTE} genau einmal
-    über \texttt{claimFaucet()} minten (\texttt{VoteToken.sol}).
-  \item \textbf{Markt mit mehreren Optionen:} \texttt{createMarket()} legt eine
-    Frage, mehrere Ausgänge und eine Deadline an (\texttt{PredictionMarket.sol})
-    ---im Frontend derzeit fest YES/NO.
-  \item \textbf{Teilnahme mit Token:} \texttt{approve} auf dem ERC-20, danach
-    \texttt{stake(marketId, outcomeId, amount)}; Token verbleiben im Vertrag als Pool.
-  \item \textbf{Ergebnis und Darstellung:} Nach \texttt{resolveMarket()} zeigt
-    das Frontend den Status \emph{Resolved} und den gewinnenden Ausgang; Gewinner
-    rufen \texttt{claimReward()} auf.
-\end{enumerate}
+Andere Teilnehmende erhalten über das Faucet eine gleiche Startausstattung an
+\emph{VOTE}-Token und können diese freiwillig auf die Ausgänge verteilen, die sie
+für plausibler halten. Solange der Markt offen ist, spiegeln die Poolgrößen die
+bisherigen Commitments wider; die Benutzeroberfläche übersetzt diese Verhältnisse
+in lesbare Prozentangaben. Nach Ablauf der Frist schließt der Markt für neue
+Einsätze. Die Admin-Wallet setzt den gewinnenden Ausgang; anschließend können
+Adressen, die auf diesen Ausgang gesetzt haben, ihre Belohnung mit einer
+eigenen Transaktion abholen. Verlierende Einsätze verbleiben im gesamten Pool und
+werden implizit an die Gewinner umverteilt, weil die Auszahlung über den
+Gesamtpool bemessen wird.
 
-\section{Komfortfunktionen (Bonusrelevanz)}
-Zusätzlich zur Kernlogik bietet die Oberfläche u.\,a.:
-\begin{itemize}
-  \item Übersicht aller Märkte mit Status (Offen / Geschlossen / Aufgelöst),
-    Gesamtpool, Deadline und Erstelleradresse.
-  \item Ausgaben-spezifische Poolgrößen und Wahrscheinlichkeit in Basis-Punkten
-    (contractseitig berechnet, 10\,000 entspricht 100\,\%).
-  \item Benachrichtigungsverlauf und Toasts für Transaktions-Feedback.
-  \item Docker-Image und GitHub-Workflow für Build/Deploy des Frontends
-    (keine Private Keys im Image).
-\end{itemize}
+\section{Kernfunktionalität im Sinne eines Mindestumfangs}
 
-\section{Beispielablauf}
-Alice, Bob und Charlie beanspruchen je 1000 VOTE. Alice erstellt einen Markt
-mit YES/NO und klärendem \emph{Resolution context}. Bob staked 100 VOTE auf YES,
-Charlie 50 VOTE auf NO. Solange der Markt offen ist, ergeben sich daraus
-Pool-Anteile und angezeigte Prozentwerte. Nach Fristende resolved die
-Admin-Wallet auf YES; Bob kann anteilig den gesamten Pool (hier 150 VOTE)
-gegenüber dem YES-Pool beanspruchen, Charlie erhält nichts.
+Im Bewertungsraster der zugehörigen Gruppenarbeit wird \emph{Kernfunktionalität}
+als das kleinste zusammenhängende Funktionsbündel verstanden, das den eigenen
+Use-Case demonstrierbar macht. Für ein tokenbasiertes Abstimmungsszenario wären
+das typischerweise Token-Verfügbarkeit, Abstimmungsaktion und Ergebnisdarstellung.
+Das vorliegende Projekt überträgt diese Struktur auf den Predictionsmarkt und
+implementiert die folgenden Pflichtelemente in enger Korrespondenz zum Code.
+
+\paragraph{(1) Tokenbereitstellung.}
+Jede Adresse kann genau einmal \texttt{claimFaucet()} aufrufen und erhält dabei
+\texttt{FAUCET\_AMOUNT} an \emph{VOTE}-Token gemäß \texttt{VoteToken.sol}. Das
+Mapping \texttt{hasClaimed} verhindert Mehrfachbezug und stellt damit eine
+einfache Sybil-Hürde auf Token-Ebene dar, die jedoch nicht identitätsstark ist.
+
+\paragraph{(2) Markt mit mehreren Ausgängen.}
+Die Funktion \texttt{createMarket} in \texttt{PredictionMarket.sol} legt Frage,
+Ausgangsliste, Laufzeit und Auflösungskontext an. Die Deadline wird absolut als
+\texttt{block.timestamp + durationInSeconds} gesetzt. Im Frontend werden die
+Ausgänge derzeit auf \emph{YES} und \emph{NO} fixiert, was für die
+Demonstration ausreicht, aber nicht die volle Expressivität des Vertrags ausschöpft.
+
+\paragraph{(3) Teilnahme mittels ERC-20-Genehmigung und Staking.}
+Teilnehmende erteilen dem Marktvertrag mit \texttt{approve} eine Allowance auf
+dem \texttt{VoteToken} und rufen anschließend \texttt{stake(marketId,
+outcomeId, amount)} auf. Die Token werden per \texttt{transferFrom} in den
+Marktvertrag verschoben und erhöhen sowohl den nutzerspezifischen Stake als auch
+den aggregierten Pool des gewählten Ausgangs sowie \texttt{totalPool}.
+
+\paragraph{(4) Auflösung, Darstellung und Auszahlung.}
+Nach \texttt{resolveMarket} ist der Markt als aufgelöst markiert; die
+Benutzeroberfläche kann Status und gewinnenden Index anzeigen. Gewinner rufen
+\texttt{claimReward(marketId)} auf; das Muster entspricht einem
+\emph{pull}-basierten Claim und vermeidet es, die Admin-Transaktion mit
+Massenauszahlungen zu belasten.
+
+\section{Komfortfunktionen und ihre Rolle im Gesamtbild}
+
+Über den Kernpfad hinaus unterstützt die Anwendung Funktionen, die die
+Demonstration im Kurskontext erleichtern und als Bonusleistungen eingeordnet
+werden können. Dazu zählen eine tabellarische oder kartenbasierte Übersicht aller
+Märkte mit Status (\emph{offen}, \emph{nach Deadline}, \emph{aufgelöst}),
+Anzeige von Gesamtpool und Erstelleradresse, die Anzeige ausgangsbezogener
+Poolgrößen sowie der vom Vertrag berechneten Wahrscheinlichkeit in
+Basis-Punkten, wobei 10\,000 Basispunkte 100\,\% entsprechen.
+
+Ergänzend bietet das Frontend Rückmeldungen zu Transaktionen (Toasts,
+Benachrichtigungsverlauf), sodass Lernende die Asynchronität von
+Blockchain-Operationen erfahren. Auf der Infrastrukturseite existieren ein
+Docker-Image für das gebaute Frontend sowie GitHub-Workflows, die ohne
+Einbettung privater Schlüssel arbeiten---ein wichtiges Qualitätsmerkmal, weil
+Geheimnisse nicht im Image landen dürfen.
+
+\section{Durchgerechnetes Zahlenbeispiel}
+
+Die Belohnungsformel wird in Kapitel~\ref{chap:contracts} formal angegeben; an
+dieser Stelle genügt ein konkreter Durchlauf in Alltagssprache. Alice, Bob und
+Charlie beanspruchen je 1000 \emph{VOTE}. Alice erstellt einen Markt mit den
+Ausgängen \emph{YES} und \emph{NO} und einem Auflösungskontext, der die spätere
+Entscheidungsgrundlage beschreibt. Bob setzt 100 Token auf \emph{YES}, Charlie
+50 Token auf \emph{NO}. Solange der Markt offen ist, beträgt der Gesamtpool
+150 Token; die angezeigten Anteile stehen damit in einem Verhältnis von zwei zu
+eins zugunsten von \emph{YES}.
+
+Nach Fristende löst die Admin-Adresse zugunsten von \emph{YES} auf. Bob hat den
+gesamten Gewinner-Pool von 100 Token konkurriert und erhält anteilig den
+vollen Gesamtpool von 150 Token, weil er der einzige Gewinner-Staker ist. Charlie
+erhält keine Auszahlung, da sein Stake auf dem Verlierer-Ausgang liegt. Liegen
+mehrere Gewinner-Staker vor, teilen sie sich den Pool proportional zu ihren
+jeweiligen Einsätzen auf dem gewinnenden Ausgang; die exakte Rundung folgt der
+ganzzahligen Division in Solidity und kann minimalen Rest (\emph{dust}) im Vertrag
+hinterlassen.
