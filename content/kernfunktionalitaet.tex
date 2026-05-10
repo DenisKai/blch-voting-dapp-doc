@@ -1,0 +1,50 @@
+\chapter{Anwendungsfall und Kernfunktionalität}
+
+\section{Use-Case in eigenen Worten}
+Eine Person möchte eine Frage zur Zukunft stellen (z.\,B.\ ob ein
+Kurs eine Schwelle überschreitet). Andere Teilnehmende platzieren mit
+\emph{VOTE}-Token Einsätze auf die von ihnen erwartete Antwort. Solange der
+Markt offen ist, zeigt die Oberfläche Poolgrößen und daraus abgeleitete
+Anteile in Prozent. Nach Ablauf der Frist wählt die Admin-Adresse den
+gewinnenden Ausgang; Gewinner holen ihre Auszahlung mit einer eigenen Transaktion
+ab (\emph{pull}).
+
+\section{Kernfunktionalität gemäß Bewertungsraster}
+Im Bewertungsdokument zur Gruppenarbeit wird \emph{Kernfunktionalität} als das
+Minimalset definiert, das den eigenen Use-Case durchspielbar macht---am Beispiel
+Token Voting z.\,B.\ Token-Verfügbarkeit, Abstimmung mit Optionen und
+Ergebnisdarstellung. Dieses Projekt folgt einem \textbf{Predictionsmarkt}-Use-Case;
+die folgende Liste ordnet die umgesetzte Kernlogik strukturell gleichartig ein:
+
+\begin{enumerate}
+  \item \textbf{Tokenbereitstellung:} Adressen können \emph{VOTE} genau einmal
+    über \texttt{claimFaucet()} minten (\texttt{VoteToken.sol}).
+  \item \textbf{Markt mit mehreren Optionen:} \texttt{createMarket()} legt eine
+    Frage, mehrere Ausgänge und eine Deadline an (\texttt{PredictionMarket.sol})
+    ---im Frontend derzeit fest YES/NO.
+  \item \textbf{Teilnahme mit Token:} \texttt{approve} auf dem ERC-20, danach
+    \texttt{stake(marketId, outcomeId, amount)}; Token verbleiben im Vertrag als Pool.
+  \item \textbf{Ergebnis und Darstellung:} Nach \texttt{resolveMarket()} zeigt
+    das Frontend den Status \emph{Resolved} und den gewinnenden Ausgang; Gewinner
+    rufen \texttt{claimReward()} auf.
+\end{enumerate}
+
+\section{Komfortfunktionen (Bonusrelevanz)}
+Zusätzlich zur Kernlogik bietet die Oberfläche u.\,a.:
+\begin{itemize}
+  \item Übersicht aller Märkte mit Status (Offen / Geschlossen / Aufgelöst),
+    Gesamtpool, Deadline und Erstelleradresse.
+  \item Ausgaben-spezifische Poolgrößen und Wahrscheinlichkeit in Basis-Punkten
+    (contractseitig berechnet, 10\,000 entspricht 100\,\%).
+  \item Benachrichtigungsverlauf und Toasts für Transaktions-Feedback.
+  \item Docker-Image und GitHub-Workflow für Build/Deploy des Frontends
+    (keine Private Keys im Image).
+\end{itemize}
+
+\section{Beispielablauf}
+Alice, Bob und Charlie beanspruchen je 1000 VOTE. Alice erstellt einen Markt
+mit YES/NO und klärendem \emph{Resolution context}. Bob staked 100 VOTE auf YES,
+Charlie 50 VOTE auf NO. Solange der Markt offen ist, ergeben sich daraus
+Pool-Anteile und angezeigte Prozentwerte. Nach Fristende resolved die
+Admin-Wallet auf YES; Bob kann anteilig den gesamten Pool (hier 150 VOTE)
+gegenüber dem YES-Pool beanspruchen, Charlie erhält nichts.

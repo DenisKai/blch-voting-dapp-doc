@@ -1,8 +1,33 @@
 \chapter{Einleitung}
 
-\section{Motivation}
-Darlegen, warum On-Chain-Abstimmungen (oder hybride Konzepte) für die
-Projektziele relevant sind.
+\section{Ausgangslage und Projektziel}
+Das Projekt \texttt{blch-voting-dapp} entstand im Rahmen einer
+Gruppenarbeit zu dezentralen Anwendungen (DApps). Namensgebend ist die
+historische Ausrichtung auf tokenbasierte Abstimmung; die aktuelle Referenzimplementierung im
+gleichen Repository realisiert jedoch einen \textbf{vereinfachten Predictionsmarkt}
+nach dem Vorbild von Plattformen wie Polymarket---ohne Orderbuch,
+Automated Market Maker, On-Chain-Orakel oder Streitbeilegung.
 
-\section{Ziele und Nicht-Ziele}
-Klarstellen, was das System gewährleisten soll und welche Grenzen es hat.
+\section{Ziel dieser Dokumentation}
+Ziel dieses Berichts ist eine \textbf{vollständige, nachvollziehbare}
+Darstellung von Anwendungsfall, Architektur, Smart Contracts, Frontend sowie
+Deploymentszenarien---unter expliziter Einordnung in die Bewertungskriterien der
+Gruppenarbeit (Kategorien Umfang, Theorie, Praxis, Report, Präsentation).
+
+\section{Abgrenzung}
+Die Umsetzung ist bewusst als Lehr-/Demo-Szenario geschnitten:
+\begin{itemize}
+  \item Collateral ist der eigene ERC-20 Token \emph{VOTE} mit einmaligem Faucet,
+    nicht echtes Ether-Staking oder Stablecoins.
+  \item Auflösung der Märkte erfolgt durch eine beim Deployment gesetzte
+    \emph{Admin}-Adresse (zentrales Oracle), keine dezentralen Orakel-Prozesse.
+  \item Das Frontend fixiert neue Märkte auf genau zwei Ausgänge (YES/NO), obwohl
+    der Vertrag grundsätzlich mehrere Outcome-Strings erlaubt.
+\end{itemize}
+
+\section{Begriff \emph{Predictionsmarkt} (Kurz)}
+Ein Predictionsmarkt bündelt Erwartungen über künftige Ereignisse in
+verbindlichen Einsätzen. In dieser Arbeit entsteht eine \textbf{implizite
+Wahrscheinlichkeit} pro Ausgang aus dem Verhältnis der Poolgrößen; sie wird
+nicht durch eine Zentralinstanz gesetzt, wohl aber das endgültige \emph{Ergebnis}
+der Wette nach Ablauf der Frist durch die Admin-Rolle.

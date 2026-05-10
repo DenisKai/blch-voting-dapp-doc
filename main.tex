@@ -8,6 +8,7 @@
 \usepackage{lmodern}
 \usepackage[ngerman]{babel}
 \usepackage{microtype}
+\usepackage{amsmath}
 
 \usepackage[a4paper,margin=2.5cm]{geometry}
 
@@ -19,8 +20,8 @@
 % Doppelte PDF-Anker auf Titelseite und Abstract vermeiden (report-Klasse).
 \hypersetup{pageanchor=false}
 
-\title{Blockchain-basierte Abstimmungsanwendung\\\large Technische Dokumentation}
-\author{Ihr Name\\\small Institution oder Lehrveranstaltung}
+\title{Dekzentrale Predictionsmarkt-DApp\\\large Technische Dokumentation (\texttt{blch-voting-dapp})}
+\author{Ihr Name(n)\\\small Institution oder Lehrveranstaltung}
 \date{\today}
 
 \begin{document}
@@ -28,8 +29,15 @@
 \maketitle
 
 \begin{abstract}
-Kurze Zusammenfassung von Umfang, Annahmen und Bezug dieses Dokuments zum
-Projekt \texttt{blch-voting-dapp}. Diesen Platzhaltertext ersetzen.
+Dieses Dokument beschreibt die im Repository \texttt{blch-voting-dapp}
+umgesetzte Demonstrations-DApp: einen vereinfachten, poolbasierten Predictionsmarkt
+auf Ethereum (Solidity), angebunden an ein Nuxt-Browser-Frontend mit
+MetaMask. Nutzerinnen und Nutzer beziehen Demonstrations-Token \emph{VOTE},
+eröffnen Märkte mit zwei Ausgängen (im Frontend fest \emph{YES}/\emph{NO}),
+staken auf einen Ausgang und erhalten nach Auflösung durch eine
+Admin-Adresse anteilige Gewinne aus dem gesamten Markt-Pool. Kernbegriffe sind
+ERC-20, Wallet-gestützte Transaktionen, On-Chain-State und ein
+\emph{pull}-basiertes Belohnungsmodell ohne zentrale Geschäftslogik auf einem Server.
 \end{abstract}
 \hypersetup{pageanchor=true}
 
@@ -38,15 +46,15 @@ Projekt \texttt{blch-voting-dapp}. Diesen Platzhaltertext ersetzen.
 \clearpage
 
 \input{content/intro}
-\input{content/system-overview}
+\input{content/kernfunktionalitaet}
+\input{content/architektur}
 \input{content/smart-contract}
-\input{content/frontend-backend}
-\input{content/security-privacy}
+\input{content/anwendung-deployment}
+\input{content/sicherheit-qualitaet}
 
 \clearpage
 
 % Optionale Literaturliste (benötigt .bib und z.\,B. biblatex/biber).
-% Bei Bedarf aktivieren:
 % \bibliography{references}
 
 \end{document}

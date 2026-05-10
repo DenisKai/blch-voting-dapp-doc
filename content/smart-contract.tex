@@ -1,12 +1,63 @@
-\chapter{Smart Contract}
+\chapter{Smart Contracts}
+\label{chap:contracts}
 
-\section{Datenmodell}
-Wichtige Speichervariablen, Aufzählungen und Zustandsübergänge.
+\section{Überblick}
+Zwei Verträge bilden die Anwendungslogik:
+\begin{description}
+  \item[\texttt{VoteToken}] ERC-20 (OpenZeppelin) mit einmaligem Faucet.
+  \item[\texttt{PredictionMarket}] Markterstellung, Staking, Auflösung,
+    Gewinnauszahlung; hält ERC-20 mittels \texttt{transferFrom}/\texttt{transfer}.
+\end{description}
 
-\section{Kernfunktionen}
-Lebenszyklus: Deployment, Einrichtung von Vorschlag oder Wahl, Abstimmung,
-Auszählung sowie ggf.\ Pausen- oder Notfallpfade.
+\section{\texttt{VoteToken.sol}}
+\begin{itemize}
+  \item Konstante \texttt{FAUCET\_AMOUNT = 1000 ether} (18 Dezimalstellen wie ETH).
+  \item Mapping \texttt{hasClaimed} verhindert mehrfaches \texttt{claimFaucet()}.
+  \item Event \texttt{FaucetClaimed}.
+\end{itemize}
 
-\section{Gas und Erweiterbarkeit}
-Kostenüberlegungen, verwendete Muster (oder explizit \emph{kein}
-Upgrade-Pfad) sowie Hinweise zum Deployment.
+\section{\texttt{PredictionMarket.sol}}
+
+\subsection{Marktstruktur}
+Das struct \texttt{Market} enthält unter anderem Ersteller, Frage,
+\texttt{resolutionContext}, \texttt{deadline}, \texttt{resolved},
+\texttt{winningOutcomeId} und \texttt{totalPool}.
+
+\subsection{Zentrale Mappings}
+\begin{itemize}
+  \item \texttt{marketOutcomes}: Outcome-Namen je Markt-ID.
+  \item \texttt{outcomePools}: eingezahlte \emph{VOTE} pro Ausgang.
+  \item \texttt{userStakes}: Stake je Nutzer und Ausgang.
+  \item \texttt{claimed}: verhindert Doppel-Auszahlung nach Auflösung.
+\end{itemize}
+
+\subsection{Wichtige externe Funktionen}
+\begin{description}
+  \item[\texttt{createMarket}] Prüft nicht-leere Frage und Kontext, mindestens
+    zwei Outcomes und positive Laufzeit; setzt Deadline absolut
+    \texttt{block.timestamp + duration}.
+  \item[\texttt{stake}] Verbietet Staking nach Deadline oder nach Auflösung;
+    zieht Token per \texttt{transferFrom}; aktualisiert Nutzer-Stake und Pool.
+  \item[\texttt{resolveMarket}] \texttt{onlyAdmin}; nur nach Deadline, setzt
+    Gewinner-Outcome-Index und markiert aufgelöst.
+  \item[\texttt{claimReward}] Nur für Gewinner ohne vorherige Auszahlung;
+    Betrag proportional zu Einsatz am gewinnenden Pool (siehe unten).
+\end{description}
+
+\subsection{Wahrscheinlichkeiten}
+Die Funktion \texttt{getOutcomeProbability} liefert Anteile in
+\textbf{Basis-Punkten}: $\text{BPS} = \lfloor \text{outcomePool}/\text{totalPool}\cdot 10000\rfloor$.
+Bei \texttt{totalPool == 0} wird 0 zurückgegeben.
+
+\subsection{Belohnungsformel}
+Für einen Nutzer mit Stake $s$ auf dem Gewinner-Pool vom Volumen $W$ und
+Markt-Gesamtpool $T$ gilt:
+\begin{equation*}
+  \text{Reward} = \left\lfloor \frac{s \cdot T}{W} \right\rfloor .
+\end{equation*}
+Gewinner teilen sich den \textbf{gesamten} Markt-Pool anteilig; Verlierer-Stakes
+fliesen über den Pool in die Auszahlung (ohne zusätzliche Gebühr im Demo-Vertrag).
+
+\subsection{Events}
+\texttt{MarketCreated}, \texttt{Staked}, \texttt{MarketResolved},
+\texttt{RewardClaimed} dienen Nachverfolgbarkeit und späterer Indexierung.

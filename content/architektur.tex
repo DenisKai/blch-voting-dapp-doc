@@ -1,0 +1,41 @@
+\chapter{Systemarchitektur und Technologie}
+
+\section{DApp-Kernkonzepte (Theorie)}
+Die Bewertung verlangt die korrekte Nutzung typischer DApp-Bausteine:
+Ethereum-Blockchain, Solidity-Smart-Contracts, Browser-Frontend und
+Wallet-Anbindung (im Merkblatt beispielhaft Web3.js und MetaMask genannt).
+Dieses Projekt erfüllt dasselbe Muster mit \textbf{ethers.js v6} statt Web3.js:
+das Frontend baut \texttt{Contract}-Instanzen mit MetaMask-injiziertem
+\texttt{window.ethereum} und signiert Transaktionen lokal.
+
+\section{Schichtenmodell}
+\begin{verbatim}
+  Nuxt 3 (Vue)  -->  ethers.js  -->  MetaMask  -->  RPC (Hardhat / Sepolia)
+                                              -->  Smart Contracts
+\end{verbatim}
+\begin{itemize}
+  \item \textbf{Präsentationsschicht:} \path{frontend/} (Nuxt, Komponenten in
+    \path{app/app.vue}, Logik in Composables \path{useWallet.ts},
+    \path{useContracts.ts}).
+  \item \textbf{On-Chain-Logik:} \path{contracts/VoteToken.sol},
+    \path{contracts/PredictionMarket.sol}, kompiliert und getestet mit Hardhat.
+  \item \textbf{Deployment:} \path{scripts/deploy.ts} schreibt Adressen nach
+    \path{deployments/<netzwerk>.json}; \path{scripts/export-frontend.ts}
+    versorgt das Frontend mit ABI und \path{addresses.json}.
+\end{itemize}
+
+\section{Kein zentrales Backend für Geschäftslogik}
+Marktstatus, Stakes und Auszahlungen liegen ausschließlich in den Contracts.
+Es gibt keinen Server, der Stimmzähler führt oder Gewinner ``bestimmt''---die
+Admin-Funktion \texttt{resolveMarket} ist bewusst \textbf{on-chain in einer
+Adresse} gebündelt (Oracle-Limitierung, siehe
+Kapitel~\ref{chap:sicherheit}).
+
+\section{Netzwerke und Konfiguration}
+\begin{itemize}
+  \item \textbf{Lokale Entwicklung:} Hardhat-Node, typischer Chain-ID
+    \texttt{31337}, RPC \texttt{http://127.0.0.1:8545} (siehe README).
+  \item \textbf{Testnet:} Sepolia-Deployment über Umgebungsvariablen
+    (\texttt{SEPOLIA\_RPC\_URL}, \texttt{SEPOLIA\_PRIVATE\_KEY})---Schlüssel
+    niemals committen oder ins Docker-Image legen.
+\end{itemize}

@@ -1,0 +1,45 @@
+\chapter{Frontend, Nutzerrollen und Deployment}
+
+\section{Frontend (Nuxt)}
+Die Haupt-UI liegt in \path{frontend/app/app.vue}:
+\begin{itemize}
+  \item Wallet: Verbinden, Anzeige von Adresse, Chain-ID,
+    \emph{VOTE}-Saldo und \emph{Allowance} gegenüber \texttt{PredictionMarket}.
+  \item Nicht-Admin: Faucet-Button (\texttt{claimFaucet}), Formular zur
+    Markterstellung mit Dauer und Resolution Context---Outcomes sind fest YES/NO.
+  \item Marktkarten: Status-Badge, Pools, angezeigte Prozentwerte, Staken mit
+    vorherigem Approve für den jeweiligen Betrag.
+  \item Admin-Adresse (aus exportierter Konfiguration): Auflösungsbuttons pro
+    Markt nach Fristablauf (\texttt{resolveMarket}).
+\end{itemize}
+Die Composable-Datei \path{useContracts.ts} kapselt alle Lesevorgänge
+(\texttt{getMarkets}-Schleife über Märkte und Outcomes) und Transaktionsaufrufe.
+
+\section{Ablauf für Endnutzerinnen}
+\begin{enumerate}
+  \item Wallet verbinden, Netzwerk lokal oder Sepolia wählen (MetaMask-Einträge
+    wie in der README beschrieben).
+  \item \emph{VOTE} einmalig fauceten und ggf.\ Saldo aktualisieren.
+  \item Markt eröffnen oder bestehenden wählen, \emph{Approve} für gewünschten
+    Stake-Betrag, danach YES oder NO staken (solange Zeitfenster und nicht
+    aufgelöst).
+  \item Nach Auflösung und eigenem Gewinn \texttt{claimReward} auslösen.
+\end{enumerate}
+
+\section{Build- und Betriebsszenarien}
+\subsection{Lokal (Entwicklung)}
+Typische Reihenfolge aus der README:
+\texttt{npm run chain} (Terminal~1); \texttt{npm run deploy:local} sowie
+\texttt{npm run export:frontend} (Terminal~2); \texttt{cd frontend \&\& npm run dev}
+(Terminal~3).
+
+\subsection{Docker \& CI}
+Ein Docker-Image bündelt das gebaute Frontend und die exportierten Contract-JSONs,
+nicht jedoch Private Keys oder Deployment-Skripte. GitHub Actions
+(\path{.github/workflows/}) können das Image erzeugen und z.\,B.\ nach GHCR pushen---
+Details im Repo \path{Dockerfile} und \path{docker-entrypoint.sh}.
+
+\section{Schnittstelle zur Chain}
+Deployed Adressen und ABIs liegen unter \path{frontend/app/contracts/} (u.\,a.\
+\texttt{addresses.json}, Artefakte). Frontend und Dokumentation müssen zur
+gleichen Deployment-Generation passen (\texttt{export:frontend} nach jedem Deploy).

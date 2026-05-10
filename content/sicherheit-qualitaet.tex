@@ -1,0 +1,66 @@
+\chapter{Sicherheit, Qualität und Bewertungseinordnung}
+\label{chap:sicherheit}
+
+\section{Schutzmechanismen im Vertrag}
+\begin{itemize}
+  \item Staking nur bei offenem Markt und vor Deadline; positive Beträge;
+    gültige Outcome-IDs.
+  \item Einmalige Auflösung; nur Admin; nur nach Fristende.
+  \item Einmalige Auszahlung pro Adresse und Markt (\texttt{claimed}).
+  \item \textbf{Pull-Payments:} Gewinner rufen \texttt{claimReward} selbst auf---
+    vermeidet teure Schleifen über alle Teilnehmer beim Oracle-Schritt und
+    entspricht einem etablierten Solidity-Muster (Bonusrelevanz Theorie/Praxis).
+\end{itemize}
+
+\section{Zentrale Schwachstellen des Demo-Designs}
+\begin{itemize}
+  \item \textbf{Vertrauen in Admin/Oracle:} Korrektheit der Auflösung hängt von
+    der ehrlichen und fachlich richtigen Wahl von \texttt{winningOutcomeId} ab---
+    keine Chainlink-/Dispute-Schicht.
+  \item \textbf{Kein Spam-Schutz / keine Anleihe für Markterstellung.}
+  \item \textbf{Kein HandelPositionswechsel nach Staken} (nicht Kernziel der Demo).
+  \item \textbf{Festlegung Frontend auf YES/NO} reduziert Flexibilität trotz
+    generischer Contract-API.
+\end{itemize}
+
+\section{Tests und Codequalität}
+Hardhat/Chai-Tests unter \path{test/PredictionMarket.ts} prüfen u.\,a.\
+Markterstellung, Validierung, ERC-20-Approve-Pfad, Zeitlogik beim Staken und
+bei der Auflösung, sowie Belohnungen und Verbote für Verlierende.
+Die Codebasis trennt Verantwortlichkeiten zwischen Token-Vertrag und
+Markt-Vertrag und nutzt etablierte OpenZeppelin-Bausteine für ERC-20---was
+Nachvollziehbarkeit und Wartbarkeit erhöht (Anforderung Praxis/Kategorie).
+
+\section{Einordnung nach Bewertungskriterien (Abgabe)}
+Die folgende Tabelle bezieht sich explizit auf das Merkblatt
+\textit{Gruppenarbeit Bewertung}.
+
+\begin{center}
+\begin{tabular}{@{}p{3.8cm}p{10.5cm}@{}}
+  \toprule
+  \textbf{Kategorie} & \textbf{Bezug zu dieser Arbeit} \\
+  \midrule
+  Umfang (Features, Gewicht 2) &
+    Kernablauf (Faucet, Markt YES/NO, Staking, Pools/Prozent-Anzeige, Admin-Auflösung,
+    Claim) ist implementiert und in der UI bedienbar.
+    Bonus: Marktüberblick, Status, Notifications, Docker/Workflow. \\
+  \midrule
+  Theorie (3) &
+    Klassische DApp-Architektur ohne zentrale Geschäftslogik; Solidity + ERC-20 +
+    Wallet. Reflexion zentralen Orakels vs.\ dezentrales Ideal; Pull-Payments. \\
+  \midrule
+  Praxis (2) &
+    Klar strukturierter TypeScript-/Vue-Code mit Composables, getrennte Contracts,
+    Tests, Deploy- und Export-Skripte (keine Keys im Image). \\
+  \midrule
+  Report (1) &
+    Dieses Dokument: Systembeschreibung, Grenzen, Ablauf, Bewertungsbezug --- für
+    Note~5/6 Logik/Ausführlichkeit entsprechend ausbauen (Diagramme,
+    Zahlen/Gas-Analyse mögliche Erweiterungen). \\
+  \midrule
+  Präsentation (1) &
+    Vorschlag Aufbau analog REPORT.md/Themenliste: Demo (Wallet, Market-Lifecycle),
+    Architekturskizze, Belohnungsformel, kritische Punkte Oracle. \\
+  \bottomrule
+\end{tabular}
+\end{center}
