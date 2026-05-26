@@ -2,7 +2,7 @@
 
 \section{Ausgangslage und Motivation}
 
-Das Repository \texttt{blch-voting-dapp} entstand im Kontext einer
+Das Repository \texttt{blch-voting-dapp} entstand im \hl{das mit ursprünglicher name würde etc klingt nach zu viel bla bla, name nicht direkt nennen} Kontext einer
 Lehrveranstaltung zu Blockchain und dezentralen Anwendungen. Der ursprüngliche
 Projektname verweist auf eine tokenbasierte Abstimmung; die referenzierte
 Referenzimplementierung im selben Code-Repository setzt jedoch einen anderen,
@@ -22,7 +22,7 @@ vollständigen Finanzprotokolls vorauszusetzen.
 \section{Projektziel und Leitfragen}
 
 Das übergeordnete Ziel besteht darin, eine \textbf{end-to-end lauffähige DApp}
-bereitzustellen, die von Studierenden betrieben, erweitert und erklärt werden
+bereitzustellen, die von Studierenden \hl{betrieben und erweiter ist nicht korrekt geht hier nur um modul arbeit} betrieben, erweitert und erklärt werden
 kann. Konkret adressiert die Implementierung folgende Leitfragen:
 \begin{itemize}
   \item Wie lassen sich Markterstellung, Teilnahme und Abrechnung so in Smart
@@ -37,7 +37,7 @@ kann. Konkret adressiert die Implementierung folgende Leitfragen:
 
 \section{Ziel und Aufbau dieser Dokumentation}
 
-Ziel dieses Berichts ist eine \textbf{lückenlos argumentierende} technische
+Ziel dieses Berichts \hl{das ist hier etwas zu viel bla bla mit stil und entscheidungen} ist eine \textbf{lückenlos argumentierende} technische
 Dokumentation im Stil einer Projekt- bzw.\ Abschlussarbeit: Sie erklärt nicht
 nur \emph{was} implementiert wurde, sondern \emph{warum} bestimmte Entscheidungen
 getroffen wurden und wie sie sich in den Code- und Deployment-Pfaden niederschlagen.
@@ -55,28 +55,28 @@ bewertungsrelevante Qualitätsmerkmale zusammen.
 
 \section{Abgrenzung und bewusste Vereinfachungen}
 
-Die Arbeit ist als Lehr- und Demonstrationssystem konzipiert und nicht als
+\hl{refomrulieren klingt nach bla bla mit Lehrveranstaltung} Die Arbeit ist als Lehr- und Demonstrationssystem konzipiert und nicht als
 Angebot für den Einsatz mit realem Wert. Die folgenden Punkte sind keine
 nachträglichen Defizite, sondern explizit gewählte Scope-Grenzen, die im Code
 nachlesbar sind.
 
 \paragraph{Collateral und ökonomischer Kontext.}
 Als Collateral dient ausschließlich der eigene ERC-20-Token \emph{VOTE} mit
-einmaligem Faucet. Damit wird weder natives Ether noch ein Stablecoin
+einmaligem Faucet. Jede Adresse kann sich hierbei einmalig einen Betrag zuweisen. Damit wird weder natives Ether noch ein Stablecoin
 eingesetzt; Preisrisiko, Compliance und Brückenlogik entfallen bewusst.
 
 \paragraph{Auflösung und Oracle-Modell.}
 Die Auflösung erfolgt durch eine beim Deployment gesetzte \emph{Admin}-Adresse.
 Diese Rolle entspricht einem zentralen Oracle mit vollem Ermessensspielraum
-hinsichtlich des gewinnenden Ausgangs nach Fristende. Es gibt keine
+hinsichtlich des gewinnenden Ausgangs nach Fristende. \hl{hier würde ich aufpassen mit terminologie} Es gibt keine
 Chainlink-Feeds, keine Reporter-Jury und keine Einspruchsinstanz.
 
 \paragraph{Frontend-Fokus auf binäre Märkte.}
 Der Vertrag \texttt{PredictionMarket} erlaubt formal mehrere Ausgänge, sofern
 die Validierung in \texttt{createMarket} erfüllt ist. Das Nuxt-Frontend
-vereinfacht die Nutzerführung, indem es neue Märkte derzeit auf die beiden
+vereinfacht die Nutzerführung, \hl{ich würde hier ur yes und no erwähnen das andere ist zwar im code möglich nur der user sieht das wie nie bzw sollte mal für reduzierten scope nicht gehen} indem es neue Märkte derzeit auf die beiden
 festen Ausgänge \emph{YES} und \emph{NO} festlegt. Diese Diskrepanz zwischen
-generischer Vertragsschnittstelle und opinionierter UI sollte bei Erweiterungen
+generischer Vertragsschnittstelle und opinionierter UI \hl{würde ich weglassen mit erweiterung}sollte bei Erweiterungen
 beachtet werden.
 
 \section{Begriff des Predictionsmarktes in dieser Arbeit}
@@ -91,7 +91,7 @@ beanspruchen mit einer eigenständigen Transaktion einen anteiligen Anteil am
 gesamten Markt-Pool gemäß der im Vertrag implementierten Formel.
 
 Die aus den Poolverhältnissen abgeleiteten Prozentwerte sind in diesem Kontext
-\textbf{implizite, einsatzgewichtete Anteile} und sollten nicht mit
+\textbf{implizite, einsatzgewichtete Anteile} und sollten \hl{das ganze hier klingt etwas fancy pancy} nicht mit
 wahrheitsgemäßen Wahrscheinlichkeiten oder mit einem effizienten
 Marktpreis im finanztheoretischen Sinn verwechselt werden. Sie sind ein
 UI-Feedback-Mechanismus und eine Konsequenz freiwilliger Tokenallokation.

@@ -74,11 +74,14 @@ Wiedereintrittsangriffe zu unterbinden; anschließend erfolgt \texttt{transfer}.
 
 \subsection{Wahrscheinlichkeitsanzeige in Basis-Punkten}
 
+\hl{das sieht hier etwas zu fancy pancy aus }
 Die Sichtfunktion \texttt{getOutcomeProbability} implementiert eine
 ganzzahlige Approximation des Poolanteils. Für einen nicht-leeren Gesamtpool gilt
 \[
   \text{BPS} = \left\lfloor \frac{\text{outcomePool}}{\text{totalPool}} \cdot 10000 \right\rfloor .
 \]
+
+\hl{glaube as ist hier zu viel detail für den report}
 Ist der Gesamtpool null, wird 0 zurückgegeben, um Division-by-Zero zu vermeiden.
 Basis-Punkte sind ein gebräuchliches Format in DeFi-Protokollen, weil sie
 Prozentangaben ohne Fließkommadarstellung erlauben.

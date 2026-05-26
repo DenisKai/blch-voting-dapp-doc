@@ -3,10 +3,11 @@
 
 \section{DApp-Kernkonzepte und ihre Umsetzung im Projekt}
 
+\hl{rephrasen hier mit lehrverantsaltung}
 Die Lehrveranstaltung verlangt typischerweise die sichere Anwendung
 grundlegender DApp-Bausteine: eine öffentliche Blockchain als Vertrauensanker,
 in Solidity geschriebene Smart Contracts, ein Browser-Frontend und eine Wallet,
-die Transaktionen signiert. Im Merkblatt werden beispielhaft Web3.js und MetaMask
+die Transaktionen signiert. \hl{rephrasen hier mit merkblatt} Im Merkblatt werden beispielhaft Web3.js und MetaMask
 genannt; funktional äquivalent setzt dieses Projekt auf \textbf{ethers.js in der
 Version 6} und ebenfalls MetaMask als injizierten Ethereum-Provider
 (\texttt{window.ethereum}).
@@ -55,6 +56,7 @@ Oberfläche ohne manuelles Kopieren mit der jeweiligen Deployment-Generation
 übereinstimmt. Dieser Schritt ist leicht zu vergessen, aber für reproduzierbare
 Demos unverzichtbar.
 
+\hl{ich weiss nicht ob es da hier braucht ggf bis auf admin adresse, weil das ja quasi die natur der DApp ist welche ihren state on chain verwaltet}
 \section{Abwesenheit eines zentralen Anwendungsservers für die Geschäftslogik}
 
 Marktlisten, Poolstände und Auszahlungsberechtigungen werden nicht in einer
@@ -68,6 +70,7 @@ die Auflösungsentscheidung trifft (vgl. Kapitel~\ref{chap:sicherheit}).
 \section{Netzwerke, Konfiguration und Betriebsmodi}
 
 \paragraph{Lokale Entwicklung.}
+\hl{hier rephrasen für den alltag im kurs}
 Für den Alltag im Kurs eignet sich ein Hardhat-Node mit Chain-ID \texttt{31337}
 und RPC-Endpunkt \texttt{http://127.0.0.1:8545}. MetaMask muss dieses Netzwerk
 als benutzerdefinierte Chain eingetragen haben, damit Transaktionen nicht an das
@@ -82,7 +85,7 @@ injizieren.
 
 \paragraph{Konsistenz zwischen Frontend und Chain.}
 Die Adressen in \path{frontend/app/contracts/addresses.json} müssen exakt zu der
-Chain passen, gegen die MetaMask verbunden ist. Ein häufiger Fehler im Praktikum
+Chain passen, gegen die MetaMask verbunden ist. Ein häufiger Fehler im \hl{das ist hier irrelvant mit im praktikum} Praktikum
 ist die Kombination aus lokalem Node, aber noch ausstehendem
 \texttt{export:frontend} nach einem frischen Deploy, oder ein Sepolia-Frontend mit
 Hardhat-Adressen.

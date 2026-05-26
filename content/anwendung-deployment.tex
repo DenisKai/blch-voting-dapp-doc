@@ -9,7 +9,7 @@ die \textbf{teilnehmende Adresse}, die Märkte erstellt und staked; die
 \textbf{Admin-Adresse}, die identisch mit dem Deployer aus \path{scripts/deploy.ts}
 gesetzt wird und Märkte auflöst; sowie \textbf{Beobachterinnen}, die lediglich
 Zustände lesen würden---im vorliegenden Frontend ist Lesen jedoch ebenfalls an
-eine verbundene Wallet gekoppelt, weil die Composables einen Signer verwenden.
+eine verbundene Wallet gekoppelt, \hl{das ist hier etwas zu much technical, mit warum man für anschauen } weil die Composables einen Signer verwenden.
 Für reine Lese-Szenarien könnte man das Frontend künftig um Provider-only-Pfade
 erweitern; der aktuelle Stand priorisiert die Demonstration transaktionsgetriebener
 Abläufe.
@@ -20,7 +20,7 @@ Die Hauptansicht in \path{frontend/app/app.vue} strukturiert die Interaktion in
 logische Blöcke. Im Wallet-Bereich werden Verbindungsstatus, Kontoadresse,
 Chain-ID, \emph{VOTE}-Saldo und die aktuelle \texttt{allowance} des
 \texttt{PredictionMarket} angezeigt. Nur wenn das erwartete Netzwerk aktiv ist,
-erscheinen die übrigen Aktionen sinnvoll; Mismatch-Warnungen sind in der Praxis
+erscheinen die übrigen Aktionen sinnvoll \hl{wenn das netzwerk aktiv ist erscheinen aktionen sinnvoll ist für mich nicht verständlich}; Mismatch-Warnungen sind in der Praxis
 ein häufiger Fehler, den diese Arbeit im Architekturkapitel bereits thematisiert.
 
 Nicht-Admin-Nutzerinnen sehen einen Faucet-Button, der \texttt{claimFaucet}
@@ -30,11 +30,11 @@ Dauer in Sekunden und den \emph{resolution context}. Die Festlegung auf zwei
 Ausgänge ist eine rein frontendseitige Vereinfachung; der Vertrag würde auch
 längere Ausgangslisten akzeptieren, sofern die Eingaben den Anforderungen genügen.
 
-Die Marktkarten visualisieren den Lebenszyklus: ausstehende Märkte erlauben
+Die Marktkarten \hl{weiss nicht ob marktkarten hier die effektiven ui cards sein sollen, ist etwas komisch auf deutsch} visualisieren den Lebenszyklus: ausstehende Märkte erlauben
 Staking, sofern die Deadline in der Zukunft liegt und keine Auflösung erfolgt ist.
 Vor dem Staken muss der Nutzer den Marktvertrag mit \texttt{approve} für den
 gewünschten Betrag autorisieren; die UI spiegelt diesen Zwei-Schritt-Prozess
-explizit wider, weil er für ERC-20-Interaktionen charakteristisch ist. Nach
+explizit wider, weil er für ERC-20-Interaktionen charakteristisch ist \hl{weiss nicht ob es den weil es charakterisch ist teil braucht}. Nach
 Auflösung erscheinen für die Admin-Adresse Auflösungsaktionen, während Gewinner
 einen Claim auslösen können.
 
@@ -48,16 +48,16 @@ pro Ausgang auf, um eine strukturierte \texttt{MarketSummary} für die UI zu
 bauen. Diese Schicht ist die natürliche Erweiterungsstelle für Pagination,
 Caching oder Fehlerbehandlung, falls die Marktanzahl in späteren Arbeiten wächst.
 
-\section{Typischer Bedienablauf für Lernende}
+\section{Typischer Bedienablauf für Lernende} \hl{wording mit lernende macht wieder keinen sinn}
 
-Der empfohlene Ablauf im Praktikum lautet wie folgt. Zuerst wird MetaMask mit der
+Der empfohlene Ablauf im Praktikum \hl{hier ebenfalls reworden von praktikum} lautet wie folgt. Zuerst wird MetaMask mit der
 lokalen Hardhat-Chain oder mit Sepolia konfiguriert und die Website geöffnet.
 Nach dem Verbinden der Wallet beansprucht jede Teilnehmerin einmalig den Faucet
 und kontrolliert den Saldo. Anschließend wird entweder ein neuer Markt erstellt
 oder ein bestehender gewählt. Vor dem Staken ist die Allowance zu setzen; danach
 wählt man den Betrag und den Ausgang. Nach Fristablauf führt die
 Deployer-Wallet die Auflösung durch; Gewinner initiieren \texttt{claimReward}.
-Zwischen diesen Schritten sollte beobachtet werden, wie sich Poolverhältnisse und
+Zwischen diesen Schritten sollte beobachtet werden \hl{hier ebenfalls das wording mit beobachtet impliziert als wäre es ein versuchsaufbau was komisch ist}, wie sich Poolverhältnisse und
 Basis-Punkte-Anzeige ändern, um das Zusammenspiel von On-Chain-State und UI zu
 verstehen.
 
@@ -65,7 +65,7 @@ verstehen.
 
 \subsection{Lokale Entwicklung}
 
-Die README des Code-Repositories empfiehlt drei Terminals: einen laufenden
+Die README des Code-Repositories empfiehlt drei Terminals \hl{wording ist hier etwas komisch wegen der perspektive mit das readme empfiehlt drei teile}: einen laufenden
 Hardhat-Node (\texttt{npm run chain}), ein Deployment inklusive Export
 (\texttt{npm run deploy:local} gefolgt von \texttt{npm run export:frontend}) und
 schließlich den Nuxt-Dev-Server im Verzeichnis \path{frontend/}. Der Node muss
@@ -75,9 +75,9 @@ während der Nutzung aktiv bleiben, da sonst RPC-Anfragen fehlschlagen.
 
 Das Docker-Image enthält das gebaute Frontend und die exportierten
 Contract-Artefakte, jedoch keine privaten Schlüssel und keine Deploy-Skripte in
-ausführungsrelevanter Form. GitHub Actions Workflows (siehe \path{.github/workflows/}
+ausführungsrelevanter Form \hl{ausführungsrelvenater form klingt komsich}. GitHub Actions Workflows (siehe \path{.github/workflows/}
 im Anwendungsrepository) können das Image bauen und beispielsweise zu GHCR
-pushen. Für eine wissenschaftliche Arbeit sollte dokumentiert werden, welche
+pushen. Für eine wissenschaftliche Arbeit sollte dokumentiert werden \hl{das mit für wissenschaftliche arbeit sollte dokumentiert werden klingt weird, entweder es steht hier oder nicht}, welche
 Pipeline-Schritte wo laufen und wie Geheimnisse injiziert werden, ohne sie in
 Logs oder Schichten abzulegen.
 
@@ -85,7 +85,7 @@ Logs oder Schichten abzulegen.
 
 Die Dateien unter \path{frontend/app/contracts/}---Adressen, ABIs und ggf.\
 netzwerkspezifische Varianten---müssen zur tatsächlich adressierten Chain passen.
-Nach jedem frischen Deployment ist \texttt{npm run export:frontend} zu wiederholen.
-Diese scheinbar triviale Disziplin verhindert den häufigen Fehler, dass
+Nach jedem frischen Deployment ist \texttt{npm run export:frontend} zu wiederholen \hl{das ist falsch export:frontend:sepolia publishe die smartconctract auf sepolia}.
+Diese scheinbar triviale Disziplin \hl{komische formulierung mit triviale disziplin}verhindert den häufigen Fehler, dass
 Transaktionen an alte Vertragsadressen gesendet werden, während die UI noch neue
 Fragen erwartet.
