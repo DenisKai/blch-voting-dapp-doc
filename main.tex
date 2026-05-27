@@ -1,7 +1,7 @@
 % Erzeugen: latexmk -pdf main.tex   (empfohlen)
 % Alternativ: pdflatex main.tex && pdflatex main.tex
 
-\documentclass[11pt,a4paper]{report}
+\documentclass[11pt,a4paper]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -20,11 +20,15 @@
 
 \usepackage[hidelinks]{hyperref}
 
+% Keine hängenden Einzuege am Zeilenanfang: klare Absatze
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5\baselineskip}
+
 % Doppelte PDF-Anker auf Titelseite und Abstract vermeiden (report-Klasse).
 \hypersetup{pageanchor=false}
 
 \title{Dezentrale Predictionsmarkt-DApp\\\large Technische Dokumentation (\texttt{blch-voting-dapp})}
-\author{Ihr Name(n)\\\small Institution oder Lehrveranstaltung}
+\author{Timon van den Nobelen, Denis Wilhelm, Frithjof Hoppe}
 \date{\today}
 
 \begin{document}
@@ -32,36 +36,18 @@
 \maketitle
 
 \begin{abstract}
-Dieses Dokument beschreibt die im Repository \texttt{blch-voting-dapp}
-implementierte Demonstrations-Anwendung als durchgängig erläuterte Fallstudie.
-Die Anwendung realisiert einen bewusst reduzierten, poolbasierten Predictionsmarkt
-auf einer EVM-kompatiblen Blockchain (Solidity), der über ein Nuxt-Browser-Frontend
-an MetaMask und einen JSON-RPC-Endpunkt angebunden ist. Teilnehmende Adressen
-beziehen einmalig Demonstrations-Token vom Typ \emph{VOTE}, legen Märkte mit
-Fragestellung, Auflösungskontext und Frist an, platzieren Einsätze auf diskrete
-Ausgänge und beanspruchen nach administrativer Auflösung anteilig den gesamten,
-im Vertrag hinterlegten Token-Pool. Die Arbeit erklärt zentrale Konzepte wie
-ERC-20, Genehmigungen (\emph{approve}/\emph{allowance}), deterministischen
-On-Chain-Zustand, Ereignisprotokolle (\emph{events}) und ein \emph{pull}-basiertes
-Auszahlungsmuster, ordnet das Design in die Landschaft kommerzieller und
-forschungsnaher Predictionsmärkte ein und benennt ausdrücklich die bewussten
-Abstriche gegenüber produktionsreifen Protokollen.
+Dieses Dokument beschreibt eine reduzierte Predictionsmarkt-DApp auf einer
+EVM-kompatiblen Blockchain. Die Anwendung kombiniert einen Demonstrationstoken,
+marktbasierte Einsätze auf diskrete Ausgänge und eine administrative Auflösung
+nach Fristende. Im Fokus stehen der technische Kernfluss, die Kopplung zwischen
+Smart Contracts und Frontend sowie die Grenzen der gewählten Demo-Architektur.
 \end{abstract}
 \hypersetup{pageanchor=true}
-
-\tableofcontents
-
-\clearpage
 
 \input{content/intro}
 \input{content/theorie-einordnung}
 \input{content/kernfunktionalitaet}
-\input{content/architektur}
-\input{content/smart-contract}
-\input{content/anwendung-deployment}
 \input{content/sicherheit-qualitaet}
-
-\clearpage
 
 % Optionale Literaturliste (benötigt .bib und z.\,B. biblatex/biber).
 % \bibliography{references}

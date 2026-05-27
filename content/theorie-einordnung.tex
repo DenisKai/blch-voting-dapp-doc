@@ -1,115 +1,28 @@
-\chapter{Theoretischer Rahmen und Einordnung im Blockchain-Ökosystem}
+\section{Methodik}
 \label{chap:theorie}
 
-\section{Dezentrale Anwendungen und die Rolle öffentlicher Ledger}
+Die DApp verlagert fachliche Kernregeln in Smart Contracts. Die Benutzeroberfläche
+erlaubt Interaktionen. Die Zustandslogik liegt on-chain. Der Marktstatus ist
+ständig aus der Blockchain ableitbar. Lesezugriffe erfolgen über RPC.
+Schreibzugriffe erfolgen über signierte Transaktionen mit Gas-Kosten.
 
-Eine \hl{generelle erklärung würde ich hier weg lassen} dezentrale Anwendung (\emph{Decentralized Application}, DApp) ist im engeren
-technischen Sinn eine Anwendung, deren wesentliche Zustandsübergänge und
-Integritätsregeln in Smart Contracts auf einer öffentlichen Blockchain festgelegt
-sind, während das Frontend lediglich eine Benutzerschnittstelle und ein
-Transaktionswerkzeug bereitstellt. Im Unterschied zu klassischen Webanwendungen
-existiert damit kein alleiniger Server, der als ``Quelle der Wahrheit'' für den
-Kern der Geschäftslogik fungiert; stattdessen replizieren die Netzwerkteilnehmer
-den konsistenten Zustand der Verträge, und Änderungen erfolgen ausschließlich
-durch transaktionsbasierte Aufrufe, die von den Knoten des Netzwerks validiert
-werden.
+Für das Projekt bedeutet dies: Der Zustand bleibt transparent und nach
+Deployment unveränderlich. Jede Änderung erfordert eine Wallet-Interaktion und
+führt zu Transaktionskosten. Die Kopplung an Ereignisse oder externe
+Entscheidungen ist modelliert, im vorliegenden System aber bewusst einfach.
 
-\hl{ich glaube den teil würde ich eher spezifischer auf das projekt machen weil das eher klingt nach ja das könnte aus den slides stammen} Für diese Arbeit sind drei Konsequenzen dieser Architektur besonders wichtig.
-Erstens sind Lesezugriffe typischerweise über einen \emph{Remote Procedure Call}
-(RPC) an einen Knoten möglich, ohne dass eine Transaktion entsteht; Schreibzugriffe
-hingegen erfordern eine signierte Nachricht der kontrollierenden Wallet und
-lösen Gebühren (\emph{Gas}) aus. Zweitens ist der ausgeführte Vertragsbytecode
-für Dritte einsehbar, sobald die Adresse bekannt ist; Transparenz und
-Unveränderlichkeit nach Deployment stehen damit im Spannungsfeld zu Fehlerkorrektur
-und Weiterentwicklung. Drittens müssen externe Realitätsbezüge---etwa das
-Eintreten eines Ereignisses in der physischen Welt---explizit in die Kette
-``gefüttert'' werden, was das sogenannte \emph{Oracle-Problem} aufwirft und in
-Predictionsmärkten zentral ist.
+Der ERC-20-Standard definiert eine Mindestschnittstelle für fungible Token:
+Salden, Übertragungen und Genehmigungen. Das Projekt verwendet \texttt{VoteToken}
+als einfaches Einsatzmittel. Der Token besitzt symbolischen Wert und verteilt sich
+über ein einmaliges Faucet. So bleiben die relevanten Interaktionsschritte einer
+typischen DApp sichtbar, ohne reales Vermögensrisiko.
 
-\section{Tokenstandards und wirtschaftliche Träger im Vertrag}
+Ein Predictionsmarkt sammelt Erwartungen über ein Ereignis in tokengewichteten
+Pools. Teilnehmer ordnen Token einem Ausgang zu. Dadurch entsteht ein Verhältnis
+zwischen den Pools. Dieses Verhältnis dient als Anzeige in der Benutzeroberfläche
+und als Grundlage für die Abrechnung.
 
-Der ERC-20-Standard definiert auf Ethereum und kompatiblen Ketten eine
-Mindestschnittstelle für fungible Token: Salden, Übertragungen und
-Genehmigungen. In produktiven Märkten dienen Stablecoins oder native Coins
-häufig als \emph{Collateral}; \hl{das mit lernprojekten würde ich weglassen eher so was wie zur vereinfachung} in Lehr- und Demonstrationsprojekten wird stattdessen
-häufig ein eigener Token eingesetzt, um finanzielle Risiken zu vermeiden und
-gleichzeitig die realistischen Arbeitsschritte (\texttt{approve},
-\texttt{transferFrom}, Saldoanzeige) zu erhalten.
-
-Das vorliegende Projekt verwendet genau dieses Muster: \texttt{VoteToken} ist ein
-ERC-20-Token mit symbolischem Wert, der über ein einmaliges \emph{Faucet}
-verteilt wird. Dadurch können Studierende und \hl{würde hier fomrulierung anpassen gutachter} Gutachterinnen den gesamten
-Lebenszyklus---von der Erstausstattung über Marktteilnahme bis zur
-Auszahlung---ohne Brücken, Fiat-On-Ramps oder Testnet-Faucets für
-Mainnet-Währungen nachvollziehen, sofern eine passende Chain-Umgebung (lokal oder
-Testnet) bereitsteht.
-
-\section{Predictionsmärkte: ökonomische Intuition}
-
-Ein Predictionsmarkt bündelt subjektive Erwartungen über unsichere künftige
-Ereignisse in Preisen bzw.\ in hier: tokengewichteten Poolanteilen. Wenn
-Teilnehmende freiwillig Token in einen Ausgangspool einbringen, reflektiert das
-Verhältnis der Pools unter vereinfachenden Annahmen eine kollektiv getragene
-Einschätzung der relativen Wahrscheinlichkeit---nicht im statistischen Sinn eines
-wahren Wertes, sondern als aggregierte, einsatzgewichtete Meinung.
-
-Die vorliegende Implementierung leitet angezeigte Wahrscheinlichkeiten aus dem
-Verhältnis \hl{pool i würde ich hier erklären bevor es eingeführt wird} $\text{Pool}_i / \text{Gesamtpool}$ ab und stellt sie in
-Basis-Punkten dar. Sobald ein Markt geschlossen und aufgelöst ist, verschiebt
-sich die Interpretation: aus einer aggregierten Erwartung wird ein
-Abrechnungsmechanismus, der Gewinner proportional zu ihrem Einsatz am
-gewinnenden Pool am gesamten Marktvolumen beteiligt.
-
-\section{Vergleich mit etablierten Systemen und Protokollen}
-
-Die folgenden Beispiele dienen der Einordnung; sie erheben keinen Anspruch auf
-Vollständigkeit, illustrieren aber typische Designachsen, von denen sich diese
-Arbeit bewusst abgrenzt.
-
-\paragraph{Polymarket und ähnliche Plattformen.}
-Polymarket (auf \hl{was ist mit layer2 gemeint} Layer-2-Infrastruktur wie Polygon betrieben) verbindet
-Benutzerfreundlichkeit mit hoher Liquidität und professionellen
-Marktmechanismen. Technisch und regulatorisch sind solche Systeme deutlich
-komplexer: Es existieren oft Orderbücher oder automatisierte
-Market-Maker-Strukturen, Risikomanagement für Collateral, sowie Prozesse zur
-Ereignisdefinition und -auflösung. Die vorliegende DApp übernimmt lediglich die
-didaktische Idee ``Frage, Ausgänge, Einsätze, Auflösung'', nicht jedoch die
-infrastrukturelle Tiefe.
-
-\paragraph{Augur.}
-Augur ist ein frühes, Ethereum-basiertes Protokoll für Predictionsmärkte mit
-dezentraler Berichterstattung und Anreizmechanismen für ``Reporter''. Die
-Komplexität liegt hier in der Governance der Wahrheitsfindung, nicht nur im
-Staking. Im Gegensatz dazu kapselt die Demo-Arbeit die Wahrheitsfindung in einer
-einzigen \emph{Admin}-Adresse und verzichtet auf ein Dispute-Layer-Design.
-
-\paragraph{Gnosis Conditional Tokens und ergänzende Frameworks.}
-\hl{gnosis selbst sagt mir nichts ... idk ob man das hier aufreissen möchte lt ggf nur sagen okay es gibt konzepte die x y z bereits beinhalten} Im Gnosis-Ökosystem wurden bedingte Token und Rahmenwerke vorgeschlagen, um
-Ergebnisse logisch zu verknüpfen und Portfolios abzubilden. Solche Ansätze sind
-flexibel und composability-orientiert, erfordern aber zusätzliche
-konzeptionelle Arbeit der Nutzerinnen. Das vorliegende Projekt bleibt bei einem
-einzigen Marktvertrag mit expliziten Ausgangs-Strings und festen Pools, um die
-Lernkurve flach zu halten.
-
-\hl{ich glaube der ganze abschnitt hier mit orcale macht keinen sinn. die admin adresse bei uns im system wird für die auflösung des market verwendet. im realen polymarket schlägt ein nutzer eine meinung vor ob YES NO korrekt ist und löst dass dene markt auf wenn keiner wiederspricht ... chainlink scheint hingegebenw as anderes zu sein}
-\paragraph{Oracle-Netzwerke (Chainlink und vergleichbare Dienste).}
-Chainlink und ähnliche Anbieter liefern preis- und ereignisbezogene Datenfeeds
-oder nachrichtenbasierte Ausführungsmuster, um Smart Contracts an Off-Chain-Realität
-zu koppeln. In produktiven Märkten reduzieren sie Einzelpunktausfälle und
-manipulationsanfällige Admin-Keys---sie ersetzen aber nicht die Notwendigkeit,
-die Semantik der abgefragten Größe sorgfältig zu definieren. Die Demo-Admin-Rolle
-ist bewusst als ``minimal funktionierendes Oracle'' gewählt, um den
-Implementierungsaufwand überschaubar zu halten und den Diskussionsgegenstand auf
-Vertragslogik und Frontend zu lenken.
-
-\section{Zusammenfassende Abgrenzung dieser Arbeit}
-
-Aus den genannten Beispielen lassen sich die Leitplanken dieser Dokumentation
-ableiten. Das System \hl{was ist eine EVM app?} ist eine \textbf{EVM-DApp mit ERC-20-Collateral und
-poolbasiertem Staking}, ohne Orderbuch, ohne AMM, ohne dezentrales Reporting und
-ohne externe Datenfeeds. Die wissenschaftlich-interessanten Fragen verschieben
-sich entsprechend: nicht ``Wie maximiert man Liquidität?'', sondern ``Wie lässt
-sich ein nachvollziehbarer, testbarer Kernfluss implementieren, der die
-architektonischen Prinzipien einer DApp sichtbar macht?'' Die folgenden Kapitel
-beantworten diese Frage entlang des tatsächlichen Codes im Repository
-\texttt{blch-voting-dapp}.
+Märkte entstehen mit Frage, Kontext, Frist und Ausgängen. Teilnehmer staken Token
+auf einen Ausgang. Nach Fristende setzt die Admin-Adresse den gewinnenden
+Ausgang. Die Benutzeroberfläche reduziert neue Märkte auf die beiden Ausgänge
+\emph{YES} und \emph{NO}, um den Ablauf kurz und nachvollziehbar zu halten.

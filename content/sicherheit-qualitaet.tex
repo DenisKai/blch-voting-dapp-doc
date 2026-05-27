@@ -1,73 +1,38 @@
-\chapter{Sicherheit, Qualität und Bewertungseinordnung}
+\section{Diskussion}
 \label{chap:sicherheit}
 
-\section{Schutzmechanismen im Vertragsdesign}
+Predictionsmärkte sind nutzerfreundlich, weil sie keine tiefen technischen
+Vorkenntnisse erfordern. Damit bieten sie eine niedrige Einstiegsschwelle.
+Gleichzeitig zeigen sie, dass Ergebnisfindung, Transparenz und
+Informationsasymmetrien zentrale Fragen sind. Die DApp bildet diesen Spannungs-
+bogen in vereinfachter Form ab.
 
-Die Implementierung folgt einer Reihe von Mustern, die typische Angriffsflächen
-in einfachen Staking-Verträgen reduzieren, ohne den Anspruch eines vollständigen
-Security-Audits zu erheben.
+Die Implementierung ist ein Demonstrationssystem und nicht produktionsreif.
+Die Auflösung erfolgt admin-basiert. Eine zentrale Instanz bestimmt das Ergebnis
+nach Fristende und erzeugt so einen Vertrauenspunkt. Im vorliegenden System
+fehlen ein dezentrales Oracle- oder Streitbeilegungsmodell, sekundärer Handel
+und weitergehende Absicherungen gegen missbräuchliche Markterstellung.
 
-\paragraph{Zeit- und Zustandsguarden.}
-Staking ist nur zulässig, solange der Markt nicht aufgelöst ist und der
-Blockzeitstempel strikt vor der Deadline liegt. Damit wird verhindert, dass nach
-öffentlich bekannter Auflösung noch Mittel in einen Ausgang umgeschichtet werden \hl{korrekt, aber komisch formuliert einfacher machen}.
-Positive Beträge und gültige Ausgangs-IDs werden zusätzlich erzwungen.
+Auch Gas- und Benutzungsaspekte bleiben reduziert. Die Anwendung zeigt nur die
+für den Kernfluss notwendigen Transaktionen und vermeidet zusätzliche
+Komplexität. Das begrenzt Funktionsumfang und Realitätsnähe.
 
-\paragraph{Einmalige Auflösung und Admin-Bindung.}
-\texttt{resolveMarket} kann pro Markt nur erfolgreich ausgeführt werden, solange
-\texttt{resolved} noch falsch ist, und nur durch die im Konstruktor festgelegte
-\texttt{admin}-Adresse. Die Deadline muss erreicht sein. So entsteht ein klarer
-Übergang von der offenen Phase zur Abrechnungsphase \hl{komische formulierung mit abrechnngsphase. lieber englische formulierung verwenden}.
+Ein dezentrales Oracle- oder Streitbeilegungsmodell reduziert die Abhängigkeit
+von einer einzelnen Admin-Adresse. Nutzer können Ergebnisse vorschlagen. Die
+Plattform vermittelt bei Konflikten oder Anfechtungen. Solche Konzepte finden
+sich in produktiven Protokollen wie Polymarket.
 
-\paragraph{Pull-Payments statt Push über alle Nutzer.}
-Gewinner müssen \texttt{claimReward} selbst aufrufen. Das vermeidet das
-bekannte ``Push''-Antipattern, bei dem ein privilegierter Aufrufer in einer
-Schleife viele Übertragungen auslöst und an das Gas-Limit stößt oder durch
-bösartige Empfänger revertiert wird. Pull-Muster sind in etablierten Solidity-
-Leitfäden \hl{fragwürdig ob es das braucht und wenn ja quelle} dokumentiert und werden hier didaktisch sichtbar gemacht.
+Weitere Erweiterungen betreffen Marktvielfalt, Auswertungen zur Gas-Nutzung und
+eine klarere Trennung zwischen UI-Vereinfachungen und on-chain-Allgemeingültigkeit.
+Die aktuelle Lösung bildet einen didaktisch klaren Kern ab, der technisch
+nachvollziehbar bleibt.
 
-\paragraph{Reentrancy und ERC-20-Interaktion.}
-Der Vertrag aktualisiert \texttt{claimed} vor dem externen Token-Transfer in
-\texttt{claimReward}, was dem Checks-Effects-Interactions-Muster \hl{hier braucht es quelle} entspricht und
-klassische Reentrancy-Pfade erschwert. Zusätzlich setzt OpenZeppelins ERC-20 auf
-moderne Solidity-Versionen mit sichereren Übertragungsmustern; dennoch bleibt die
-allgemeine Regel gültig \hl{welche regel, komische formulierung}, externe Calls zuletzt auszuführen und den Zustand zuvor
-final zu setzen.
+Ein dezentrales Oracle- oder Streitbeilegungsmodell reduziert die Abhängigkeit
+von einer einzelnen Admin-Adresse. Nutzer können Ergebnisse vorschlagen. Die
+Plattform vermittelt bei Konflikten oder Anfechtungen. Solche Konzepte finden
+sich in produktiven Protokollen wie Polymarket.
 
-\section{Zentrale Grenzen und bewusste Schwachstellen des Demo-Designs}
-
-\paragraph{Vertrauen in Admin und Oracle-Semantik.}
-Die korrekte Auflösung hängt vollständig von der ehrlichen und sachgerechten Wahl
-von \texttt{winningOutcomeId} ab. Ein kompromittierter oder fehlbediener Admin
-kann Gewinner willkürlich setzen. Produktive Systeme ersetzen oder ergänzen diese
-Stelle durch dezentrale Reporter, Mehrheitsabstimmungen, ökonomische Anreize \hl{nein im produktiven system wäre das ein oracble im sinne von polymarket} oder
-anspruchsvollere Oracle-Protokolle (vgl. Kapitel~\ref{chap:theorie}).
-
-\paragraph{Kein wirtschaftlicher Spam-Schutz für Markterstellung.}
-Jede Adresse kann Märkte erzeugen, ohne Gebühr in \emph{VOTE} oder nativem Coin
-zu hinterlegen \hl{das stimmt nur bedingt, da gleichwohl gas benötigt wird}. Das erleichtert Demos, eröffnet aber Missbrauchspotenzial in
-öffentlichen Deployments durch Markt-Flutungen.
-
-\paragraph{Kein Handel oder Positionswechsel.}
-Nach dem Staken gibt es keine Möglichkeit, Positionen zu verkaufen, zu hedgen oder
-zwischen Ausgängen zu wechseln. Echte Märkte bieten hierfür Sekundärhandel oder
-AMMs \hl{würd eich entfenren wenn nicht spezifiert wird was das ist}; dieses Projekt verzichtet bewusst darauf.
-
-\paragraph{Frontend-Reduktion auf YES/NO.}
-Obwohl der Vertrag mehrere Ausgänge unterstützt, führt das Frontend neue Märkte
-nur binär. Das ist eine UX-Entscheidung, die bei wissenschaftlicher Auswertung
-explizit genannt werden muss \hl{die formulierung mit bei wissenschaftlicher arbeit entfernen}, damit nicht der Eindruck entsteht, der Vertrag sei
-auf zwei Ausgänge beschränkt.
-
-\section{Tests, Nachvollziehbarkeit und Codequalität}
-
-Die Hardhat-Tests unter \path{test/PredictionMarket.ts} decken zentrale Pfade ab:
-Markterstellung inklusive Validierung, ERC-20-Genehmigungen, zeitabhängiges
-Staking, Auflösungsregeln und korrekte sowie verbotene Auszahlungen. Die
-Verwendung etablierter Bibliotheken für den Token-Standard erhöht die
-Konfidenz \hl{komische denglische formulierung} in grundlegende Operationen wie \texttt{transfer} und \texttt{approve}.
-
-\hl{dieser teil mit benotung sollte komplett raus} Für eine Benotung im oberen Bereich empfiehlt es sich, neben diesem Dokument
-optional Ergänzungen wie Sequenzdiagramme, Gas-Kostenbeobachtungen oder eine
-kurze manuelle Threat-Modelling-Übung beizulegen; sie sind im aktuellen Umfang
-nicht zwingend, erhöhen aber die Überzeugungskraft der Abgabe.
+Weitere Erweiterungen betreffen Marktvielfalt, Auswertungen zur Gas-Nutzung und
+eine klarere Trennung zwischen UI-Vereinfachungen und on-chain-Allgemeingültigkeit.
+Die aktuelle Lösung bildet einen didaktisch klaren Kern ab, der technisch
+nachvollziehbar bleibt.

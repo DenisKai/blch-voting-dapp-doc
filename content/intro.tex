@@ -1,97 +1,74 @@
-\chapter{Einleitung}
+\section{Einleitung}
+Diese Arbeit beschreibt eine reduzierte Predictionsmarkt-DApp. Die Anwendung
+verbindet einen ERC-20-Demonstrationstoken, marktbasierte Einsaetze auf diskrete
+Ausgaenge und eine administrative Aufloesung nach Fristende. Im Mittelpunkt steht
+damit kein allgemeines Blockchain-Geruest, sondern ein klar abgegrenzter
+Kernfluss mit Tokenverteilung, Markterstellung, Einsatz und Auszahlung.
 
-\section{Ausgangslage und Motivation}
+Als Beispiel dient ein Predictionsmarkt. Das Beispiel stellt fachliche und
+technische Fragen kompakt dar. Die Teilnahme erfordert keine tiefe Vorarbeit.
+Teilnehmende koennen direkt an einem binären Markt mitwirken. Gleichzeitig sind
+Ergebnisfindung, Vertrauensannahmen und Informationsasymmetrien zentrale
+Aspekte.
 
-Das Repository \texttt{blch-voting-dapp} entstand im \hl{das mit ursprünglicher name würde etc klingt nach zu viel bla bla, name nicht direkt nennen} Kontext einer
-Lehrveranstaltung zu Blockchain und dezentralen Anwendungen. Der ursprüngliche
-Projektname verweist auf eine tokenbasierte Abstimmung; die referenzierte
-Referenzimplementierung im selben Code-Repository setzt jedoch einen anderen,
-für die Demonstration von Marktmechanismen besonders geeigneten Schwerpunkt: Sie
-implementiert einen \textbf{vereinfachten Predictionsmarkt}, bei dem Teilnehmende
-mit einem ERC-20-Demonstrationstoken auf diskrete Ausgänge wetten und nach
-Ablauf einer Frist eine verwaltete Auflösung erhalten.
-
-Die Motivation für genau diese Wahl ist zweifach. Erstens verbindet ein
-Predictionsmarkt ökonomische Intuition (Einsätze spiegeln Erwartungen wider) mit
-einer klaren technischen Schnittstelle (Pools, Fristen, Auszahlungen). Zweitens
-lassen sich die Grenzen akademischer Miniatur-Implementierungen gegenüber
-Produktionssystemen---etwa fehlende Liquiditätsmechanismen oder dezentrale
-Wahrheitsfindung---didaktisch präzise benennen, ohne die Komplexität eines
-vollständigen Finanzprotokolls vorauszusetzen.
-
-\section{Projektziel und Leitfragen}
-
-Das übergeordnete Ziel besteht darin, eine \textbf{end-to-end lauffähige DApp}
-bereitzustellen, die von Studierenden \hl{betrieben und erweiter ist nicht korrekt geht hier nur um modul arbeit} betrieben, erweitert und erklärt werden
-kann. Konkret adressiert die Implementierung folgende Leitfragen:
+Das übergeordnete Ziel besteht darin, eine durchgängig lauffaehige DApp
+bereitzustellen, deren Aufbau, Vertragslogik und Kopplung zur Oberfläche
+nachvollziehbar bleiben. Konkret adressiert die Implementierung folgende Leitfragen:
 \begin{itemize}
   \item Wie lassen sich Markterstellung, Teilnahme und Abrechnung so in Smart
     Contracts formulieren, dass der Zustand vollständig on-chain nachvollziehbar
     bleibt?
-  \item Wie gestaltet sich die Kopplung zwischen Browser-Frontend, Wallet und
+  \item Wie gestaltet sich die Kopplung zwischen Browser-Oberflaeche, Wallet und
     JSON-RPC-Endpunkt, sodass typische Nutzeraktionen (Genehmigen, Staken,
     Auflösen, Beanspruchen) robust abgebildet werden?
   \item Welche Sicherheits- und Vertrauensannahmen sind für eine Demo akzeptabel,
     und wo müsste ein produktives System nachrüsten?
 \end{itemize}
 
-\section{Ziel und Aufbau dieser Dokumentation}
+Ziel dieses Berichts ist eine kurze, fachlich geschlossene technische
+Dokumentation im Stil einer Projektarbeit. Sie beschreibt die Lösung, analysiert
+die wichtigsten Designentscheidungen und leitet daraus die Grenzen und das
+Verbesserungspotenzial der Implementierung ab.
 
-Ziel dieses Berichts \hl{das ist hier etwas zu viel bla bla mit stil und entscheidungen} ist eine \textbf{lückenlos argumentierende} technische
-Dokumentation im Stil einer Projekt- bzw.\ Abschlussarbeit: Sie erklärt nicht
-nur \emph{was} implementiert wurde, sondern \emph{warum} bestimmte Entscheidungen
-getroffen wurden und wie sie sich in den Code- und Deployment-Pfaden niederschlagen.
-Die Darstellung folgt einer linearen Leselogik.
+Kapitel~\ref{chap:theorie} beschreibt die Methodik und die technische Grundidee.
+Kapitel~\ref{chap:kern} analysiert den Kernablauf der DApp und den
+Funktionsumfang. Kapitel~\ref{chap:sicherheit} diskutiert Grenzen und
+Verbesserungspotenzial. Zusammen ergibt sich daraus ein kurzer, geschlossen
+argumentierter Projektbericht.
 
-Kapitel~\ref{chap:theorie} ordnet die Arbeit in den Kontext dezentraler
-Anwendungen, Tokenstandards und bekannter Predictionsmarkt-Projekte ein und
-benennt die bewusste fachliche Reduktion. Kapitel~\ref{chap:kern} beschreibt den
-Anwendungsfall und die Kernfunktionalität entlang des realen Nutzerpfads.
-Kapitel~\ref{chap:arch} erläutert die Systemarchitektur und Werkzeugkette.
-Kapitel~\ref{chap:contracts} geht in die Smart Contracts und deren
-Zustandsmodell. Kapitel~\ref{chap:frontend} beschreibt Frontend, Rollen und
-Deployment. Kapitel~\ref{chap:sicherheit} fasst Schutzmechanismen, Grenzen und
-bewertungsrelevante Qualitätsmerkmale zusammen.
+Die Arbeit ist als Demonstrationssystem konzipiert und nicht für den Einsatz mit
+realen Daten vorgesehen. Die folgenden Punkte sind daher keine nachträglichen
+Defizite, sondern bewusst gesetzte Grenzen des Projektumfangs.
 
-\section{Abgrenzung und bewusste Vereinfachungen}
+Als Sicherheiten-Token dient ausschliesslich der eigene ERC-20-Token \emph{VOTE} mit
+einmaligem Faucet. Jede Adresse kann sich einmalig einen Betrag zuweisen. Damit
+werden weder natives Ether noch ein Stablecoin als Einsatzmittel verwendet.
+Preisrisiko, Compliance und Brueckenlogik bleiben damit ausserhalb des Systems.
+Brueckenlogik bezeichnet hier die Komplexitaet, die sich bei Abhaengigkeiten zu
+anderen Systemen oder zum Mainnet ergibt.
 
-\hl{refomrulieren klingt nach bla bla mit Lehrveranstaltung} Die Arbeit ist als Lehr- und Demonstrationssystem konzipiert und nicht als
-Angebot für den Einsatz mit realem Wert. Die folgenden Punkte sind keine
-nachträglichen Defizite, sondern explizit gewählte Scope-Grenzen, die im Code
-nachlesbar sind.
+Die Aufloesung erfolgt durch eine beim Deployment gesetzte \emph{Admin}-Adresse.
+Diese Rolle bestimmt nach Fristende den gewinnenden Ausgang. Das System enthält
+keine Chainlink-Feeds, keine Reporter-Jury und keine Einspruchsinstanz. Chainlink-
+Feeds sind externe Datenquellen, die in einem realen Anwendungsfall zur Aufloesung
+eines Markts noetig sein koennen.
 
-\paragraph{Collateral und ökonomischer Kontext.}
-Als Collateral dient ausschließlich der eigene ERC-20-Token \emph{VOTE} mit
-einmaligem Faucet. Jede Adresse kann sich hierbei einmalig einen Betrag zuweisen. Damit wird weder natives Ether noch ein Stablecoin
-eingesetzt; Preisrisiko, Compliance und Brückenlogik entfallen bewusst.
-
-\paragraph{Auflösung und Oracle-Modell.}
-Die Auflösung erfolgt durch eine beim Deployment gesetzte \emph{Admin}-Adresse.
-Diese Rolle entspricht einem zentralen Oracle mit vollem Ermessensspielraum
-hinsichtlich des gewinnenden Ausgangs nach Fristende. \hl{hier würde ich aufpassen mit terminologie} Es gibt keine
-Chainlink-Feeds, keine Reporter-Jury und keine Einspruchsinstanz.
-
-\paragraph{Frontend-Fokus auf binäre Märkte.}
-Der Vertrag \texttt{PredictionMarket} erlaubt formal mehrere Ausgänge, sofern
-die Validierung in \texttt{createMarket} erfüllt ist. Das Nuxt-Frontend
-vereinfacht die Nutzerführung, \hl{ich würde hier ur yes und no erwähnen das andere ist zwar im code möglich nur der user sieht das wie nie bzw sollte mal für reduzierten scope nicht gehen} indem es neue Märkte derzeit auf die beiden
-festen Ausgänge \emph{YES} und \emph{NO} festlegt. Diese Diskrepanz zwischen
-generischer Vertragsschnittstelle und opinionierter UI \hl{würde ich weglassen mit erweiterung}sollte bei Erweiterungen
-beachtet werden.
-
-\section{Begriff des Predictionsmarktes in dieser Arbeit}
+der Vertrag \texttt{PredictionMarket} erlaubt formal mehrere Ausgaenge, sofern
+die Validierung in \texttt{createMarket} erfuellt ist. Die Nuxt-Oberfläche
+vereinfacht die Nutzerfuehrung, indem sie neue Maerkte derzeit auf die beiden
+festen Ausgaenge \emph{YES} und \emph{NO} festlegt. Die Benutzeroberfläche bildet
+damit bewusst einen binären Kernfall ab.
 
 Im weiteren Verlauf bezeichnet der Begriff \emph{Predictionsmarkt} die konkret
 implementierte Variante: Ein Markt besitzt eine textuelle Frage, einen
-Auflösungskontext zur operationalen Klärung, eine absolute Deadline, eine Menge
-benannter Ausgänge und pro Ausgang einen Token-Pool. Solange die Deadline nicht
-überschritten ist, können Adressen Token in die Pools einbringen (\emph{staken}).
-Nach Fristende wählt die Admin-Adresse den gewinnenden Ausgang; Gewinner
-beanspruchen mit einer eigenständigen Transaktion einen anteiligen Anteil am
-gesamten Markt-Pool gemäß der im Vertrag implementierten Formel.
+Aufloesungskontext zur operationalen Klaerung, eine absolute Deadline, eine
+Menge benannter Ausgaenge und pro Ausgang einen Token-Pool. Solange die Deadline
+nicht überschritten ist, koennen Adressen Token in die Pools einbringen
+(\emph{staken}). Nach Fristende wählt die Admin-Adresse den gewinnenden Ausgang.
+Gewinner beanspruchen mit einer eigenstaendigen Transaktion einen anteiligen
+Anteil am gesamten Markt-Pool gemaess der im Vertrag implementierten Formel.
 
-Die aus den Poolverhältnissen abgeleiteten Prozentwerte sind in diesem Kontext
-\textbf{implizite, einsatzgewichtete Anteile} und sollten \hl{das ganze hier klingt etwas fancy pancy} nicht mit
-wahrheitsgemäßen Wahrscheinlichkeiten oder mit einem effizienten
-Marktpreis im finanztheoretischen Sinn verwechselt werden. Sie sind ein
-UI-Feedback-Mechanismus und eine Konsequenz freiwilliger Tokenallokation.
+Die aus den Poolverhaeltnissen abgeleiteten Prozentwerte sind in diesem Kontext
+\textbf{einsatzgewichtete Anteile}. Sie dienen dem Nutzenden als Feedback fuer
+einen freiwillig platzierten Einsatz. Es handelt sich somit nicht um eine exakte
+Vorhersage eines realen Ereignisses.
